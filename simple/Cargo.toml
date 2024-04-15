@@ -1,0 +1,10 @@
+[package]
+name = "simple"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+antithesis_sdk_rust = { path = "../lib" }
+serde_json = "1.0.115"
+linkme = "0.3"
+paste = "1.0.14"

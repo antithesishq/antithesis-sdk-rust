@@ -1,0 +1,17 @@
+[package]
+name = "antithesis_sdk_rust"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde_json = "1.0.115"
+libloading = "0.8.3"
+libc = "0.2.153"
+rand = "0.8.5"
+rustc_version_runtime = "0.3.0"
+lazy_static = "1.4.0"
+linkme = "0.3"
+paste = "1.0.14"
+
+[dev-dependencies]
+serde = { version = "1.0", features = ["derive"] }
