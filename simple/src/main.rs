@@ -9,8 +9,7 @@ use antithesis_sdk_rust::assert_impl;
 #[distributed_slice]
 pub static ANTITHESIS_CATALOG: [CatalogInfo];
 
-pub fn main() {
-
+pub fn register_catalog() {
     let no_details: Value = json!({});
     for info in ANTITHESIS_CATALOG.iter() {
         println!("{} {} {} {} {}", info.display_type, info.message, info.class, info.file, info.begin_line);
@@ -30,7 +29,10 @@ pub fn main() {
             &no_details
         );
     }
+}
 
+#[allow(dead_code)]
+fn random_demo() {
     // random::get_random()
     println!("fuzz_get_random() => {}", random::get_random());
 
@@ -49,7 +51,10 @@ pub fn main() {
         };
     }
     println!();
+}
 
+#[allow(dead_code)]
+fn lifecycle_demo() {
     // lifecycle::setup_complete
     let bird_value: Value = json!({
         "name": "Tweety Bird",
@@ -76,11 +81,10 @@ pub fn main() {
         "day": 32
     });
     lifecycle::send_event("user_info", &info_value);
+}
 
-    // always
-    let details = json!({"things": 13});
-    always!(true, "Things look good", &details, ALWAYS_23);
-
+#[allow(dead_code)]
+fn slice_demo() {
     #[distributed_slice(ANTITHESIS_CATALOG)]
     static ALWAYS_001: antithesis_sdk_rust::assert::CatalogInfo = antithesis_sdk_rust::assert::CatalogInfo{
         assert_type: concat!("always"),
@@ -96,14 +100,6 @@ pub fn main() {
         id: concat!("Things look good"), /* id */ 
     };
 
-    // alwaysOrUnreachable
-    let details = json!({"more things": "red and blue"});
-    always_or_unreachable!(true, "A few colors", &details);
-
-    // sometimes
-    let details = json!({"notes": [1,2,3,4,5]});
-    sometimes!(false, "Notes have small values", &details);
-
     #[distributed_slice(ANTITHESIS_CATALOG)]
     static SOMETIMES_001: antithesis_sdk_rust::assert::CatalogInfo = antithesis_sdk_rust::assert::CatalogInfo{
         assert_type: concat!("sometimes"),
@@ -118,6 +114,27 @@ pub fn main() {
         must_hit: true, /* must-hit */ 
         id: concat!("Things look good"), /* id */ 
     };
+}
+
+fn assert_demo() {
+
+    // catalog_entry!(
+    //     assert_type = "always",
+    //     display_type = "EachAndEvery"
+    // );
+
+    // always
+    let details = json!({"things": 13});
+    always!(true, "Things look good", &details, ALWAYS_23);
+
+    // alwaysOrUnreachable
+    let details = json!({"more things": "red and blue"});
+    always_or_unreachable!(true, "A few colors", &details);
+
+    // sometimes
+    let details = json!({"notes": [1,2,3,4,5]});
+    sometimes!(false, "Notes have small values", &details);
+
 
     // reachable
     for i in 0..4 {
@@ -128,4 +145,17 @@ pub fn main() {
     // unreachable
     let details = json!({"impossible!": {"name": "trouble", "weights": [100,200,300]}});
     unreachable!("Impossible to get here", &details);
+}
+
+pub fn main() {
+
+    register_catalog();
+
+    // random_demo();
+
+    // lifecycle_demo();
+
+    // slice_demo();
+
+    assert_demo();
 }
