@@ -1,7 +1,6 @@
-use libc::c_char;
+use libc::{c_char, size_t};
 use libloading::{Library, Symbol};
 use serde_json::{Value};
-use std::ffi::{CString};
 use std::io::{Error};
 use std::sync::{Once, Mutex, Arc};
 
@@ -44,10 +43,10 @@ impl VoidstarHandler {
 
 impl LibHandler for VoidstarHandler {
     fn output(&mut self, value: &Value) -> Result<(), Error> {
+        let payload = value.to_string();
         unsafe {
-            let json_data_func: Symbol<unsafe extern fn(s: *const c_char)> = self.voidstar_lib.get(b"fuzz_json_data").unwrap();
-            let payload = CString::new(value.to_string())?;
-            json_data_func(payload.as_ptr());
+            let json_data_func: Symbol<unsafe extern fn(s: *const c_char, l: size_t)> = self.voidstar_lib.get(b"fuzz_json_data").unwrap();
+            json_data_func(payload.as_bytes().as_ptr() as *const c_char, payload.len());
         }
         Ok(())
     }
