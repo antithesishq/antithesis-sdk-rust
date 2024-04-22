@@ -171,46 +171,29 @@ impl AssertionInfo {
 
     // Verify that the TrackingInfo for self in 
     // ASSERT_TRACKER has been updated according to self.condition
-    fn track_entry(&self, tracker: &mut HashMap<String, TrackingInfo>) {
-
+    fn track_entry(&self) {
         // Requirement: Catalog entries must always will emit()
         if !self.hit {
             self.emit();
             return
         }
 
-        let tracking_key = self.id.clone(); 
-
         // Establish TrackingInfo for this trackingKey when needed
-        let maybe_info = tracker.get(&tracking_key);
-        if maybe_info.is_none() {
-            tracker.insert(self.id.clone(), TrackingInfo::new());
-        }
-
-        // Record the condition in the associated TrackingInfo entry
-        let condition = self.condition;
-        let tracked_entry = tracker.entry(self.id.clone());
-        tracked_entry.and_modify(|e: &mut TrackingInfo| {
-            if condition {
-                e.pass_count += 1;
-            } else {
-                e.fail_count += 1;
-            }
-        });
-
-        // Really emit the assertion when first seeing a condition
-        if let Some(tracking_info) = tracker.get(&tracking_key) {
-            let pass_count = tracking_info.pass_count;
-            let fail_count = tracking_info.fail_count;
-            if condition {
-                if pass_count == 1 {
-                    self.emit()
-                }
-            } else if fail_count == 1 {
-                self.emit()
-            }
+        let mut tracker = ASSERT_TRACKER.lock().unwrap();
+        let info = tracker.entry(self.id.clone()).or_default();
+        // Record the condition in the associated TrackingInfo entry,
+        // and emit the assertion when first seeing a condition
+        let emitting = if self.condition {
+            info.pass_count += 1;
+            info.pass_count == 1
+        } else {
+            info.fail_count += 1;
+            info.fail_count == 1
         };
-        
+        drop(tracker); // release the lock asap
+        if emitting {
+            self.emit();
+        }
     }
 
     fn emit(&self) {
@@ -260,7 +243,7 @@ pub fn assert_impl(
 
 
     let assertion = AssertionInfo::new(assert_type, display_type, condition, message, class, function, file, begin_line, begin_column, hit, must_hit, id, details);
-    let _ = &assertion.track_entry(ASSERT_TRACKER.lock().as_deref_mut().unwrap());
+    let _ = &assertion.track_entry();
 }
 
 #[cfg(test)]
@@ -617,7 +600,7 @@ mod tests {
         let mut tracking_data = TrackingInfo::new();
 
         let tracking_key: String = key.to_owned();
-        match ASSERT_TRACKER.lock().as_deref().unwrap().get(&tracking_key) {
+        match ASSERT_TRACKER.lock().unwrap().get(&tracking_key) {
             None => tracking_data,
             Some(ti) => {
                 tracking_data.pass_count = ti.pass_count;
