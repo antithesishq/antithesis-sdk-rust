@@ -1,3 +1,4 @@
+use once_cell::sync::Lazy;
 use serde_json::{Value, json};
 use std::collections::HashMap;
 use crate::internal;
@@ -221,9 +222,7 @@ impl AssertionInfo {
     }
 }
 
-lazy_static!{
-    static ref ASSERT_TRACKER: Mutex<HashMap<String, TrackingInfo>> = Mutex::new(HashMap::new());
-}
+static ASSERT_TRACKER: Lazy<Mutex<HashMap<String, TrackingInfo>>> = Lazy::new(|| Mutex::new(HashMap::new()));
 
 #[allow(clippy::too_many_arguments)]
 pub fn assert_impl(
