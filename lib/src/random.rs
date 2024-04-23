@@ -4,14 +4,13 @@ pub fn get_random() -> u64 {
     internal::dispatch_random()
 }
 
-pub fn random_choice<T: Copy>(slice: &[T]) -> Option<T> {
-    let lx: usize = slice.len();
-    match lx {
-        0 => None,
-        1 => Some(slice[0]),
+pub fn random_choice<T>(slice: &[T]) -> Option<&T> {
+    match slice {
+        [] => None,
+        [x] => Some(x),
         _ => {
-            let idx: usize = (get_random() as usize) % lx;
-            Some(slice[idx])
+            let idx: usize = (get_random() as usize) % slice.len();
+            Some(&slice[idx])
         }
     }
 }
@@ -33,7 +32,7 @@ mod tests {
     fn random_choice_one_choice() {
         let array = ["ABc"; 1];
         assert_eq!(1, array.len());
-        assert_eq!(Some("ABc"), random_choice(&array))
+        assert_eq!(Some(&"ABc"), random_choice(&array))
     }
 
 
@@ -52,7 +51,7 @@ mod tests {
         for _i in 0..15 {
             let rc = random_choice(all_keys.as_slice());
             if let Some(choice) = rc {
-                if let Some(x) = counted_items.get_mut(&choice) {
+                if let Some(x) = counted_items.get_mut(choice) {
                     *x += 1;
                 }
             }
