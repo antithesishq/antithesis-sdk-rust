@@ -5,7 +5,7 @@ use std::io::{Write, BufWriter, Error};
 
 use crate::internal::{LibHandler};
 
-static LOCAL_OUTPUT: &str = "ANTITHESIS_SDK_LOCAL_OUTPUT";
+const LOCAL_OUTPUT: &str = "ANTITHESIS_SDK_LOCAL_OUTPUT";
 
 // #[allow(dead_code)]
 pub struct LocalHandler {

@@ -6,7 +6,7 @@ use std::sync::{Once, Mutex, Arc};
 
 use crate::internal::{LibHandler};
 
-static LIB_NAME: &str = "/usr/lib/libmockstar.so";
+const LIB_NAME: &str = "/usr/lib/libmockstar.so";
 
 pub fn has_voidstar() -> bool {
     load_voidstar();

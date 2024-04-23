@@ -9,10 +9,10 @@ mod local_handler;
 mod voidstar_handler;
 
 // Hardly ever changes, refers to the underlying JSON representation
-static PROTOCOL_VERSION: &str = "1.0.0";
+const PROTOCOL_VERSION: &str = "1.0.0";
 
 // Tracks SDK releases
-static SDK_VERSION: &str = "0.1.1";
+const SDK_VERSION: &str = "0.1.1";
 
 // static mut LIB_HANDLER: Option<Box<dyn LibHandler>> = None;
 static LIB_HANDLER: Mutex<Option<Box<dyn LibHandler + Send>>> = Mutex::new(None);
