@@ -1,5 +1,5 @@
 use libc::{c_char, size_t};
-use libloading::{Library, Symbol};
+use libloading::{Library};
 use serde_json::{Value};
 use std::io::{Error};
 
@@ -7,33 +7,48 @@ use crate::internal::{LibHandler};
 
 const LIB_NAME: &str = "/usr/lib/libmockstar.so";
 
-#[derive(Debug)]
 pub struct VoidstarHandler {
-    voidstar_lib: Library,
+    // Not used directly but exists to ensure the library is loaded
+    // and all the following function pointers points to valid memory.
+    _lib: Library,
+    // SAFETY: The memory pointed by `s` must be valid up to `l` bytes.
+    fuzz_json_data: unsafe fn(s: *const c_char, l: size_t),
+    fuzz_get_random: fn() -> u64,
 }
 
 impl VoidstarHandler {
     pub fn try_load() -> Result<Self, libloading::Error> {
-        let lib = unsafe { Library::new(LIB_NAME) }?;
-        Ok(VoidstarHandler { voidstar_lib: lib })
+        // SAFETY:
+        // - The `libvoidstar`/`libmockstar `libraries that we intended to load
+        //   should not have initalization procedures that requires special arrangments at loading time.
+        //   Otherwise, loading an arbitrary library that happens to be at `LIB_NAME` is an unsupported case.
+        // - Similarly, we load symbols by names and assume they have the expected signatures,
+        //   and loading arbitrary symbols that happen to take those names are unsupported.
+        // - `fuzz_json_data` and `fuzz_get_random` copy the function pointers,
+        //   but they would be valid as we bind their lifetime to the library they are from
+        //   by storing all of them in the `VoidstarHandler` struct.
+        unsafe {
+            let lib = Library::new(LIB_NAME)?;
+            let fuzz_json_data = *lib.get(b"fuzz_json_data\0")?;
+            let fuzz_get_random = *lib.get(b"fuzz_get_random\0")?;
+            Ok(VoidstarHandler { _lib: lib, fuzz_json_data, fuzz_get_random })
+        }
     }
 }
 
 impl LibHandler for VoidstarHandler {
     fn output(&self, value: &Value) -> Result<(), Error> {
         let payload = value.to_string();
+        // SAFETY: The data pointer and length passed into `fuzz_json_data` points to valid memory
+        // that we just initialized above.
         unsafe {
-            let json_data_func: Symbol<unsafe extern fn(s: *const c_char, l: size_t)> = self.voidstar_lib.get(b"fuzz_json_data").unwrap();
-            json_data_func(payload.as_bytes().as_ptr() as *const c_char, payload.len());
+            (self.fuzz_json_data)(payload.as_bytes().as_ptr() as *const c_char, payload.len());
         }
         Ok(())
     }
 
     fn random(&self) -> u64 {
-        unsafe {
-            let get_random_func: Symbol<unsafe extern fn() -> u64> = self.voidstar_lib.get(b"fuzz_get_random").unwrap();
-            get_random_func()
-        }
+        (self.fuzz_get_random)()
     }
 }
 
