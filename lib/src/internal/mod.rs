@@ -2,6 +2,7 @@ use once_cell::sync::Lazy;
 use rustc_version_runtime::version;
 use serde_json::{Value, json};
 use std::io::{Error};
+use std::sync::Once;
 use local_handler::LocalHandler;
 use voidstar_handler::{VoidstarHandler};
 
@@ -48,7 +49,16 @@ pub fn dispatch_random() -> u64 {
 // Made public so it can be invoked from the antithesis_sdk_rust::lifecycle 
 // and antithesis_sdk_rust::assert module
 pub fn dispatch_output(json_data: &Value) {
+
+    static INIT: Once = Once::new();
+
+    INIT.call_once(|| {
+        let sdk_value: Value = sdk_info();
+        let _ = LIB_HANDLER.output(&sdk_value);
+    });
+
     let _ = LIB_HANDLER.output(json_data);
+
 }
 
 fn sdk_info() -> Value {
