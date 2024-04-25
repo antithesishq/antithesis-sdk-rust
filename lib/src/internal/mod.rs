@@ -1,52 +1,34 @@
+use once_cell::sync::Lazy;
 use rustc_version_runtime::version;
 use serde_json::{Value, json};
 use std::io::{Error};
-use std::sync::Mutex;
 use local_handler::LocalHandler;
-use voidstar_handler::{VoidstarHandler, has_voidstar};
+use voidstar_handler::{VoidstarHandler};
 
 mod local_handler;
 mod voidstar_handler;
 
 // Hardly ever changes, refers to the underlying JSON representation
-static PROTOCOL_VERSION: &str = "1.0.0";
+const PROTOCOL_VERSION: &str = "1.0.0";
 
 // Tracks SDK releases
-static SDK_VERSION: &str = "0.1.1";
+const SDK_VERSION: &str = "0.1.1";
 
-// static mut LIB_HANDLER: Option<Box<dyn LibHandler>> = None;
-static LIB_HANDLER: Mutex<Option<Box<dyn LibHandler + Send>>> = Mutex::new(None);
+static LIB_HANDLER: Lazy<Box<dyn LibHandler + Sync + Send>> = Lazy::new(|| {
+    match VoidstarHandler::try_load() {
+        Ok(handler) => Box::new(handler),
+        Err(_) => Box::new(LocalHandler::new()),
+    }
+});
 
 trait LibHandler {
-    fn output(&mut self, value: &Value) -> Result<(), Error>;
+    fn output(&self, value: &Value) -> Result<(), Error>;
     fn random(&self) -> u64;
-}
-
-fn instantiate_handler() {
-    if LIB_HANDLER.lock().unwrap().is_some() {
-        return
-    }
-
-    let lh : Box<dyn LibHandler + Send> = if has_voidstar() {
-        Box::new(VoidstarHandler::new())
-    } else {
-        Box::new(LocalHandler::new())
-    };
-
-    {
-        let mut x = LIB_HANDLER.lock().unwrap();
-        *x = Some(lh);
-    }
-
-    let sdk_value: Value = sdk_info();
-    dispatch_output(&sdk_value)
 }
 
 // Made public so it can be invoked from the antithesis_sdk_rust::random module
 pub fn dispatch_random() -> u64 {
-    instantiate_handler();
-    LIB_HANDLER.lock().unwrap().as_ref().unwrap().random()
-    
+    LIB_HANDLER.random()
 }
 
 // Ignore any and all errors - either the output is completed,
@@ -66,8 +48,7 @@ pub fn dispatch_random() -> u64 {
 // Made public so it can be invoked from the antithesis_sdk_rust::lifecycle 
 // and antithesis_sdk_rust::assert module
 pub fn dispatch_output(json_data: &Value) {
-    instantiate_handler();
-    let _ = LIB_HANDLER.lock().unwrap().as_mut().unwrap().output(json_data);
+    let _ = LIB_HANDLER.output(json_data);
 }
 
 fn sdk_info() -> Value {
