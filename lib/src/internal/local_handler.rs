@@ -1,15 +1,14 @@
 use serde_json::{Value};
 use std::env;
 use std::fs::File;
-use std::io::{Write, BufWriter, Error};
+use std::io::{Write, Error};
 
 use crate::internal::{LibHandler};
 
-static LOCAL_OUTPUT: &str = "ANTITHESIS_SDK_LOCAL_OUTPUT";
+const LOCAL_OUTPUT: &str = "ANTITHESIS_SDK_LOCAL_OUTPUT";
 
-// #[allow(dead_code)]
 pub struct LocalHandler {
-    maybe_writer: Option<BufWriter<Box<dyn Write + Send>>>
+    maybe_writer: Option<File>
 }
 
 impl LocalHandler {
@@ -27,7 +26,7 @@ impl LocalHandler {
             // Seems like LocalHandler gets bound to a reference with 
             // a 'static lifetime.
             LocalHandler{
-                maybe_writer: Some(BufWriter::with_capacity(0, Box::new(f)))
+                maybe_writer: Some(f)
             }
         } else {
                 eprintln!("Unable to write to '{}' - {}", filename.as_str(), create_result.unwrap_err());
@@ -39,13 +38,15 @@ impl LocalHandler {
 }
 
 impl LibHandler for LocalHandler {
-    fn output(&mut self, value: &Value) -> Result<(), Error> {
-        let maybe_writer = self.maybe_writer.as_mut();
-        match maybe_writer {
+    fn output(&self, value: &Value) -> Result<(), Error> {
+        match &self.maybe_writer {
             Some(b2w) => {
-                let mut text_line = value.to_string();
-                text_line.push('\n');
-                b2w.write_all(text_line.as_bytes())?;
+                let mut b2w = b2w;
+                // The compact Display impl (selected using `{}`) of `serde_json::Value` contains no newlines,
+                // hence we are outputing valid JSONL format here.
+                // Using the `{:#}` format specifier may results in extra newlines and indentation.
+                // See https://docs.rs/serde_json/latest/serde_json/enum.Value.html#impl-Display-for-Value.
+                writeln!(b2w, "{}", value)?;
                 b2w.flush()?;
                 Ok(())
             },
