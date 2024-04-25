@@ -46,18 +46,17 @@ impl LitOrMacro {
         match self {
             LitOrMacro::Text(t) => {
                 match t {
-                    Lit::Str(lit_str) => format!("{}", lit_str.value()),
+                    Lit::Str(lit_str) => lit_str.value().to_owned(),
                     Lit::Bool(lit_bool) => if lit_bool.value() { "true".to_owned() } else { "false".to_owned() },
                     Lit::Int(lit_int) => lit_int.base10_digits().to_owned(),
                     _ => "".to_owned()
                 }
             },
             LitOrMacro::Macro(m) => {
-                match m {
-                    Macro { path, bang_token:_, delimiter:_, tokens:_ } => {
-                        let macro_ident = &path.segments[0].ident;
-                        format!("{}!()", macro_ident.to_string())
-                    }
+                let Macro { path, bang_token:_, delimiter:_, tokens:_ } = m;
+                {
+                    let macro_ident = &path.segments[0].ident;
+                    format!("{}!()", macro_ident)
                 }
             }
         }
@@ -173,7 +172,7 @@ impl ParsableField {
     #[allow(dead_code)]
     fn str_repr(&self) -> String {
         match &self.value {
-            Lit::Str(lit_str) => format!("{}", lit_str.value()),
+            Lit::Str(lit_str) => lit_str.value().to_owned(),
             Lit::Bool(lit_bool) => if lit_bool.value() { "true".to_owned() } else { "false".to_owned() },
             Lit::Int(lit_int) => lit_int.base10_digits().to_owned(),
             _ => "".to_owned()
@@ -208,17 +207,13 @@ impl AssertWithConditionArgs {
     fn str_repr(&mut self, idx: usize) -> String {
         let mut text = "".to_owned();
         let it  = &mut self.fields.iter_mut();
-        match it.nth(idx) {
-            Some(f) => {
-                text = match &f.value {
-                    Lit::Str(lit_str) => format!("{}", lit_str.value()),
-                    Lit::Bool(lit_bool) => if lit_bool.value() { "true".to_owned() } else { "false".to_owned() },
-                    Lit::Int(lit_int) => lit_int.base10_digits().to_owned(),
-                    _ => "".to_owned()
-                };
-                ()
-            },
-            None => ()
+        if let Some(f) = it.nth(idx) {
+            text = match &f.value {
+                Lit::Str(lit_str) => lit_str.value().to_owned(),
+                Lit::Bool(lit_bool) => if lit_bool.value() { "true".to_owned() } else { "false".to_owned() },
+                Lit::Int(lit_int) => lit_int.base10_digits().to_owned(),
+                _ => "".to_owned()
+            };
         };
         text
     }
@@ -251,17 +246,13 @@ impl ReachabilityArgs {
     fn str_repr(&mut self, idx: usize) -> String {
         let mut text = "".to_owned();
         let it  = &mut self.fields.iter_mut();
-        match it.nth(idx) {
-            Some(f) => {
-                text = match &f.value {
-                    Lit::Str(lit_str) => format!("{}", lit_str.value()),
-                    Lit::Bool(lit_bool) => if lit_bool.value() { "true".to_owned() } else { "false".to_owned() },
-                    Lit::Int(lit_int) => lit_int.base10_digits().to_owned(),
-                    _ => "".to_owned()
-                };
-                ()
-            },
-            None => ()
+        if let Some(f) = it.nth(idx) {
+            text = match &f.value {
+                Lit::Str(lit_str) => lit_str.value().to_owned(),
+                Lit::Bool(lit_bool) => if lit_bool.value() { "true".to_owned() } else { "false".to_owned() },
+                Lit::Int(lit_int) => lit_int.base10_digits().to_owned(),
+                _ => "".to_owned()
+            };
         };
         text
     }
@@ -292,15 +283,14 @@ fn show_fields(fields: &Punctuated<ParsableNamedField, Token![,]>) {
                 }
             },
             LitOrMacro::Macro(m) => {
-                match m {
-                    Macro { path, bang_token:_, delimiter:_, tokens:_ } => {
-                        let macro_ident = &path.segments[0].ident;
-                        format!("{}!()", macro_ident.to_string())
-                    }
+                let Macro { path, bang_token:_, delimiter:_, tokens:_ } = m;
+                {
+                    let macro_ident = &path.segments[0].ident;
+                    format!("{}!()", macro_ident)
                 }
             }
         };
-        eprintln!("Arg: {}: {}", name.to_string(), value_repr)
+        eprintln!("Arg: {}: {}", name, value_repr)
     }
 }
 
@@ -475,28 +465,22 @@ pub fn catalog_entry(body: TokenStream) -> TokenStream {
                         None
                     },
                     "line" => {
-                        match current_ident {
-                            Some(EntryField::BeginLine) => {
-                                begin_line = Some("47".to_owned());
-                            },
-                            _ => ()
+                        if let Some(EntryField::BeginLine) = current_ident {
+                            begin_line = Some("47".to_owned());
                         };
                         None
                     },
                     "column" => {
-                        match current_ident {
-                            Some(EntryField::BeginColumn) => {
-                                begin_column = Some("3".to_owned());
-                            },
-                            _ => ()
+                        if let Some(EntryField::BeginColumn) = current_ident {
+                            begin_column = Some("3".to_owned());
                         };
                         None
                     }
                     _ => None,
                 };
-                eprintln!("Ident => {}", ident.to_string())
+                eprintln!("Ident => {}", ident)
             },
-           TokenTree::Punct(punctuation) => eprintln!("Punct => {}", punctuation.to_string()),
+           TokenTree::Punct(punctuation) => eprintln!("Punct => {}", punctuation),
            TokenTree::Literal(literal) => {
                 let text = literal.to_string();
                 match current_ident {
