@@ -18,15 +18,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "assertion_catalog"
-version = "0.1.0"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 1.0.109",
-]
-
-[[package]]
 name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

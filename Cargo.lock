@@ -6,7 +6,6 @@ version = 3
 name = "antithesis_sdk_rust"
 version = "0.1.0"
 dependencies = [
- "assertion_catalog",
  "libc",
  "libloading",
  "linkme",
@@ -16,15 +15,6 @@ dependencies = [
  "rustc_version_runtime",
  "serde",
  "serde_json",
-]
-
-[[package]]
-name = "assertion_catalog"
-version = "0.1.0"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
 ]
 
 [[package]]
@@ -219,7 +209,6 @@ name = "simple"
 version = "0.1.0"
 dependencies = [
  "antithesis_sdk_rust",
- "assertion_catalog",
  "linkme",
  "once_cell",
  "paste",
