@@ -221,6 +221,7 @@ dependencies = [
  "antithesis_sdk_rust",
  "assertion_catalog",
  "linkme",
+ "once_cell",
  "paste",
  "serde_json",
 ]

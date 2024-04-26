@@ -88,7 +88,7 @@ pub struct CatalogInfo {
     pub condition: bool,
     pub message: &'static str,
     pub class: &'static str,
-    pub function: &'static str,
+    pub function: &'static Lazy<&'static str>,
     pub file: &'static str,
     pub begin_line: u32,
     pub begin_column: u32,

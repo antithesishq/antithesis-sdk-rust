@@ -3,6 +3,8 @@ use antithesis_sdk_rust::{lifecycle, random};
 use antithesis_sdk_rust::{always, always_or_unreachable, sometimes, reachable, unreachable};
 use antithesis_sdk_rust::assert::{CatalogInfo};
 use linkme::distributed_slice;
+use once_cell::sync::Lazy;
+
 
 use antithesis_sdk_rust::assert_impl;
 
@@ -12,14 +14,15 @@ pub static ANTITHESIS_CATALOG: [CatalogInfo];
 pub fn register_catalog() {
     let no_details: Value = json!({});
     for info in ANTITHESIS_CATALOG.iter() {
-        println!("{} {} {} {} {}", info.display_type, info.message, info.class, info.file, info.begin_line);
+        let f_name = once_cell::sync::Lazy::<&'static str>::force(info.function);
+        println!("Catalog Item ==> fn: '{}' display_type: '{}' - '{}' {}[{}]", f_name, info.display_type, info.message, info.file, info.begin_line);
         assert_impl(
             info.assert_type,
             info.display_type,
             info.condition,
             info.message,
             info.class,
-            info.function,
+            f_name,
             info.file,
             info.begin_line,
             info.begin_column,
@@ -83,49 +86,11 @@ fn lifecycle_demo() {
     lifecycle::send_event("user_info", &info_value);
 }
 
-#[allow(dead_code)]
-fn slice_demo() {
-    #[distributed_slice(ANTITHESIS_CATALOG)]
-    static ALWAYS_001: antithesis_sdk_rust::assert::CatalogInfo = antithesis_sdk_rust::assert::CatalogInfo{
-        assert_type: concat!("always"),
-        display_type: concat!("Always"),
-        condition: false,
-        message: concat!("Things look good"),
-        class: concat!(module_path!()),
-        function: concat!("yes"),
-        file: concat!(file!()),
-        begin_line: line!(),
-        begin_column: column!(), /* column */
-        must_hit: true, /* must-hit */ 
-        id: concat!("Things look good"), /* id */ 
-    };
-
-    #[distributed_slice(ANTITHESIS_CATALOG)]
-    static SOMETIMES_001: antithesis_sdk_rust::assert::CatalogInfo = antithesis_sdk_rust::assert::CatalogInfo{
-        assert_type: concat!("sometimes"),
-        display_type: concat!("Sometimes"),
-        condition: false,
-        message: concat!("Notes have small values"),
-        class: concat!(module_path!()),
-        function: concat!("maybe"),
-        file: concat!(file!()),
-        begin_line: line!(),
-        begin_column: column!(), /* column */
-        must_hit: true, /* must-hit */ 
-        id: concat!("Things look good"), /* id */ 
-    };
-}
-
 fn assert_demo() {
-
-    // catalog_entry!(
-    //     assert_type = "always",
-    //     display_type = "EachAndEvery"
-    // );
 
     // always
     let details = json!({"things": 13});
-    always!(true, "Things look good", &details, ALWAYS_23);
+    always!(true, "Things 777 look good", &details);
 
     // alwaysOrUnreachable
     let details = json!({"more things": "red and blue"});
@@ -151,11 +116,9 @@ pub fn main() {
 
     register_catalog();
 
-    // random_demo();
+    random_demo();
 
-    // lifecycle_demo();
-
-    // slice_demo();
+    lifecycle_demo();
 
     assert_demo();
 }

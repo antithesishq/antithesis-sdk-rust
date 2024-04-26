@@ -1,7 +1,7 @@
 use proc_macro::{TokenStream, TokenTree};
 use quote::{quote, format_ident};
 use syn::{braced, parenthesized, parse, parse_macro_input, token, Result, Token};
-use syn::{Ident, Macro, Lit};
+use syn::{Ident, Macro, Lit, Expr};
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
 
@@ -183,41 +183,60 @@ impl ParsableField {
 // -------------------------------------------------------------------------------- 
 // AssertWithConditionArgs
 //
-// Used for always!, sometimes!, alwaysOrUnreachable!
+// Used for all of the following assertions:
+// always!(cond, msg, details)
+// sometimes!(cond, msg, details)
+// alwaysOrUnreachable!(cond, msg, details)
 // -------------------------------------------------------------------------------- 
 #[derive(Debug)]
 #[allow(dead_code)]
+// struct AssertWithConditionArgs {
+//     paren_token: token::Paren,
+//     fields: Punctuated<ParsableField, Token![,]>,
+// }
 struct AssertWithConditionArgs {
-    paren_token: token::Paren,
-    fields: Punctuated<ParsableField, Token![,]>,
+    condition_field: Expr,
+    message_field: Lit, // Lit::Str
+    details_field: Expr,
 }
 
+// impl Parse for AssertWithConditionArgs {
+//     fn parse(input: ParseStream) -> Result<Self> {
+//         let content;
+//         Ok(AssertWithConditionArgs {
+//             paren_token: parenthesized!(content in input),
+//             fields: Punctuated::<ParsableField, Token![,]>::parse_terminated(&content)?,
+//         })
+//     }
+// }
 impl Parse for AssertWithConditionArgs {
     fn parse(input: ParseStream) -> Result<Self> {
         let content;
+        let _paren_token = parenthesized!(content in input);
         Ok(AssertWithConditionArgs {
-            paren_token: parenthesized!(content in input),
-            fields: Punctuated::<ParsableField, Token![,]>::parse_terminated(&content)?,
+            condition_field: (content.parse()?, input.parse::<syn::Token![,]>()?).0, 
+            message_field: (content.parse()?, input.parse::<syn::Token![,]>()?).0,
+            details_field: content.parse()?
         })
     }
 }
 
-impl AssertWithConditionArgs {
-    #[allow(dead_code)]
-    fn str_repr(&mut self, idx: usize) -> String {
-        let mut text = "".to_owned();
-        let it  = &mut self.fields.iter_mut();
-        if let Some(f) = it.nth(idx) {
-            text = match &f.value {
-                Lit::Str(lit_str) => lit_str.value().to_owned(),
-                Lit::Bool(lit_bool) => if lit_bool.value() { "true".to_owned() } else { "false".to_owned() },
-                Lit::Int(lit_int) => lit_int.base10_digits().to_owned(),
-                _ => "".to_owned()
-            };
-        };
-        text
-    }
-}
+// impl AssertWithConditionArgs {
+//     #[allow(dead_code)]
+//     fn str_repr(&mut self, idx: usize) -> String {
+//         let mut text = "".to_owned();
+//         let it  = &mut self.fields.iter_mut();
+//         if let Some(f) = it.nth(idx) {
+//             text = match &f.value {
+//                 Lit::Str(lit_str) => lit_str.value().to_owned(),
+//                 Lit::Bool(lit_bool) => if lit_bool.value() { "true".to_owned() } else { "false".to_owned() },
+//                 Lit::Int(lit_int) => lit_int.base10_digits().to_owned(),
+//                 _ => "".to_owned()
+//             };
+//         };
+//         text
+//     }
+// }
 
 // -------------------------------------------------------------------------------- 
 // ReachabilityArgs
@@ -226,37 +245,51 @@ impl AssertWithConditionArgs {
 // -------------------------------------------------------------------------------- 
 #[derive(Debug)]
 #[allow(dead_code)]
+// struct ReachabilityArgs {
+//     paren_token: token::Paren,
+//     fields: Punctuated<ParsableField, Token![,]>,
+// }
 struct ReachabilityArgs {
-    paren_token: token::Paren,
-    fields: Punctuated<ParsableField, Token![,]>,
+    message_field: Lit, // Lit::Str
+    details_field: Expr,
 }
 
+// impl Parse for ReachabilityArgs {
+//     fn parse(input: ParseStream) -> Result<Self> {
+//         let content;
+//         Ok(ReachabilityArgs {
+//             paren_token: parenthesized!(content in input),
+//             fields: Punctuated::<ParsableField, Token![,]>::parse_terminated(&content)?,
+//         })
+//     }
+// }
 impl Parse for ReachabilityArgs {
     fn parse(input: ParseStream) -> Result<Self> {
         let content;
+        let _paren_token = parenthesized!(content in input);
         Ok(ReachabilityArgs {
-            paren_token: parenthesized!(content in input),
-            fields: Punctuated::<ParsableField, Token![,]>::parse_terminated(&content)?,
+            message_field: (content.parse()?, input.parse::<syn::Token![,]>()?).0,
+            details_field: content.parse()?
         })
     }
 }
 
-impl ReachabilityArgs {
-    #[allow(dead_code)]
-    fn str_repr(&mut self, idx: usize) -> String {
-        let mut text = "".to_owned();
-        let it  = &mut self.fields.iter_mut();
-        if let Some(f) = it.nth(idx) {
-            text = match &f.value {
-                Lit::Str(lit_str) => lit_str.value().to_owned(),
-                Lit::Bool(lit_bool) => if lit_bool.value() { "true".to_owned() } else { "false".to_owned() },
-                Lit::Int(lit_int) => lit_int.base10_digits().to_owned(),
-                _ => "".to_owned()
-            };
-        };
-        text
-    }
-}
+// impl ReachabilityArgs {
+//     #[allow(dead_code)]
+//     fn str_repr(&mut self, idx: usize) -> String {
+//         let mut text = "".to_owned();
+//         let it  = &mut self.fields.iter_mut();
+//         if let Some(f) = it.nth(idx) {
+//             text = match &f.value {
+//                 Lit::Str(lit_str) => lit_str.value().to_owned(),
+//                 Lit::Bool(lit_bool) => if lit_bool.value() { "true".to_owned() } else { "false".to_owned() },
+//                 Lit::Int(lit_int) => lit_int.base10_digits().to_owned(),
+//                 _ => "".to_owned()
+//             };
+//         };
+//         text
+//     }
+// }
 
 // -------------------------------------------------------------------------------- 
 // Local Helpers
@@ -519,30 +552,6 @@ pub fn catalog_entry(body: TokenStream) -> TokenStream {
     // Ignore the entire macro contents
     TokenStream::new()
 }
-
-
-// #[proc_macro]
-// pub fn catalog_macro(input: TokenStream) -> TokenStream {
-// 
-//     let catalog_item: CatalogEntry = parse_macro_input!(input);
-//     code_gen(catalog_item)
-// 
-// }
-// 
-// fn code_gen(ce: CatalogEntry) -> TokenStream {
-//     let dsp_type = ce.display_type.to_owned();
-//     let msg = ce.message.to_owned();
-//     let static_var_name = format!("{}_{}", dsp_type.to_ascii_uppercase(), msg.to_ascii_uppercase());
-//     let mut result = TokenStream::new();
-//     let var_def = quote! {
-//         STATIC #static_var_name : MiniCat = MiniCat{
-//             assert_type: ce.assert_type,
-//             display_type: ce.display_type,
-//             message: ce.message,
-//         }
-//     });
-//     TokenStream::from(var_def)
-// }
 
 
 #[allow(dead_code)]

@@ -1,46 +1,39 @@
-// use linkme::distributed_slice;
-
-        // #[distributed_slice(ANTITHESIS_CATALOG)]
 #[macro_export]
 macro_rules! always {
-    ($condition:expr, $message:literal, $details:expr, $x:ident) => {
+    ($condition:expr, $message:literal, $details:expr) => {
 
-        // assert_catalog!({
-        //     assert_type: "always",
-        //     display_type: "Always",
-        //     message: $message,
-        // });
+{{
+        fn f(){}
+        fn type_name_of<T>(_: T) -> &'static str {
+            std::any::type_name::<T>()
+        }
+        static NAME: Lazy<&'static str> = Lazy::new(|| type_name_of(f));
+        static FUN_NAME: Lazy<&'static str> = Lazy::new(|| &NAME[..NAME.len() - 3]);
 
-        static ALWAYS_241: antithesis_sdk_rust::assert::CatalogInfo = antithesis_sdk_rust::assert::CatalogInfo{
+        #[distributed_slice(ANTITHESIS_CATALOG)]
+        static ALWAYS_CATALOG_ITEM: $crate::assert::CatalogInfo = $crate::assert::CatalogInfo{
             assert_type: concat!("always"),
             display_type: concat!("Always"),
             condition: false,
             message: $message,
             class: concat!(module_path!()),
-            function: concat!("yes"),
+            function: &FUN_NAME, /* function: &Lazy<&str> */
             file: concat!(file!()),
-            begin_line: line!(), /* line */
-            begin_column: column!(), /* column */
-            must_hit: true, /* must-hit */ 
-            id: concat!($message) /* id */ 
+            begin_line: line!(),
+            begin_column: column!(),
+            must_hit: true,
+            id: concat!($message)
         };
 
+        let maybe_function = Lazy::get(&FUN_NAME);
+        let function = *maybe_function.unwrap_or(&"anonymous");
         assert_impl(
             "always", /* assert_type */ 
             "Always", /* display_type */ 
             $condition, /* condition */
             $message, /* message */
             module_path!(), /* class */
-
-            { // taken from function!() in https://crates.io/crates/stdext
-                fn f(){}
-                fn type_name_of<T>(_: T) -> &'static str {
-                    std::any::type_name::<T>()
-                }
-                let name = type_name_of(f);
-                &name[..name.len() - 3]
-            }, /* function */
-
+            function, /* function */
             file!(), /* file */ 
             line!(), /* line */
             column!(), /* column */
@@ -49,30 +42,47 @@ macro_rules! always {
             $message, /* id */ 
             $details /* details */
         )
-    }
+}};
+
+    } // arm ($condition:expr, $message:literal, $details:expr)
 }
 
 #[macro_export]
 macro_rules! always_or_unreachable {
     ($condition:expr, $message:literal, $details:expr) => {
 
+{{
+        fn f(){}
+        fn type_name_of<T>(_: T) -> &'static str {
+            std::any::type_name::<T>()
+        }
+        static NAME: Lazy<&'static str> = Lazy::new(|| type_name_of(f));
+        static FUN_NAME: Lazy<&'static str> = Lazy::new(|| &NAME[..NAME.len() - 3]);
+
+        #[distributed_slice(ANTITHESIS_CATALOG)]
+        static ALWAYS_CATALOG_ITEM: $crate::assert::CatalogInfo = $crate::assert::CatalogInfo{
+            assert_type: concat!("always"),
+            display_type: concat!("AlwaysOrUnreachable"),
+            condition: false,
+            message: $message,
+            class: concat!(module_path!()),
+            function: &FUN_NAME, /* function: &Lazy<&str> */
+            file: concat!(file!()),
+            begin_line: line!(),
+            begin_column: column!(),
+            must_hit: false,
+            id: concat!($message)
+        };
+
+        let maybe_function = Lazy::get(&FUN_NAME);
+        let function = *maybe_function.unwrap_or(&"anonymous");
         assert_impl(
             "always", /* assert_type */ 
             "AlwaysOrUnreachable", /* display_type */ 
             $condition, /* condition */
             $message, /* message */
             module_path!(), /* class */
-
-            { // taken from function!() in https://crates.io/crates/stdext
-                fn f(){}
-                fn type_name_of<T>(_: T) -> &'static str {
-                    std::any::type_name::<T>()
-                }
-                let name = type_name_of(f);
-                &name[..name.len() - 3]
-            }, /* function */
-
-
+            function, /* function */
             file!(), /* file */ 
             line!(), /* line */
             column!(), /* column */
@@ -81,29 +91,47 @@ macro_rules! always_or_unreachable {
             $message, /* id */ 
             $details /* details */
         )
-    }
+}};
+
+    } // arm ($condition:expr, $message:literal, $details:expr)
 }
 
 #[macro_export]
 macro_rules! sometimes {
     ($condition:expr, $message:literal, $details:expr) => {
+
+{{
+        fn f(){}
+        fn type_name_of<T>(_: T) -> &'static str {
+            std::any::type_name::<T>()
+        }
+        static NAME: Lazy<&'static str> = Lazy::new(|| type_name_of(f));
+        static FUN_NAME: Lazy<&'static str> = Lazy::new(|| &NAME[..NAME.len() - 3]);
+
+        #[distributed_slice(ANTITHESIS_CATALOG)]
+        static SOMETIMES_CATALOG_ITEM: $crate::assert::CatalogInfo = $crate::assert::CatalogInfo{
+            assert_type: concat!("sometimes"),
+            display_type: concat!("Sometimes"),
+            condition: false,
+            message: $message,
+            class: concat!(module_path!()),
+            function: &FUN_NAME, /* function: &Lazy<&str> */
+            file: concat!(file!()),
+            begin_line: line!(),
+            begin_column: column!(),
+            must_hit: true,
+            id: concat!($message)
+        };
+
+        let maybe_function = Lazy::get(&FUN_NAME);
+        let function = *maybe_function.unwrap_or(&"anonymous");
         assert_impl(
             "sometimes", /* assert_type */ 
             "Sometimes", /* display_type */ 
             $condition, /* condition */
             $message, /* message */
             module_path!(), /* class */
-
-            { // taken from function!() in https://crates.io/crates/stdext
-                fn f(){}
-                fn type_name_of<T>(_: T) -> &'static str {
-                    std::any::type_name::<T>()
-                }
-                let name = type_name_of(f);
-                &name[..name.len() - 3]
-            }, /* function */
-
-
+            function, /* function */
             file!(), /* file */ 
             line!(), /* line */
             column!(), /* column */
@@ -112,29 +140,47 @@ macro_rules! sometimes {
             $message, /* id */ 
             $details /* details */
         )
-    }
+}};
+
+    } // arm ($condition:expr, $message:literal, $details:expr)
 }
 
 #[macro_export]
 macro_rules! reachable {
     ($message:literal, $details:expr) => {
+
+{{
+        fn f(){}
+        fn type_name_of<T>(_: T) -> &'static str {
+            std::any::type_name::<T>()
+        }
+        static NAME: Lazy<&'static str> = Lazy::new(|| type_name_of(f));
+        static FUN_NAME: Lazy<&'static str> = Lazy::new(|| &NAME[..NAME.len() - 3]);
+
+        #[distributed_slice(ANTITHESIS_CATALOG)]
+        static REACHABILITY_CATALOG_ITEM: $crate::assert::CatalogInfo = $crate::assert::CatalogInfo{
+            assert_type: concat!("reachability"),
+            display_type: concat!("Reachable"),
+            condition: false,
+            message: $message,
+            class: concat!(module_path!()),
+            function: &FUN_NAME, /* function: &Lazy<&str> */
+            file: concat!(file!()),
+            begin_line: line!(),
+            begin_column: column!(),
+            must_hit: true,
+            id: concat!($message)
+        };
+
+        let maybe_function = Lazy::get(&FUN_NAME);
+        let function = *maybe_function.unwrap_or(&"anonymous");
         assert_impl(
             "reachability", /* assert_type */ 
             "Reachable", /* display_type */ 
             true, /* condition */
             $message, /* message */
             module_path!(), /* class */
-
-            { // taken from function!() in https://crates.io/crates/stdext
-                fn f(){}
-                fn type_name_of<T>(_: T) -> &'static str {
-                    std::any::type_name::<T>()
-                }
-                let name = type_name_of(f);
-                &name[..name.len() - 3]
-            }, /* function */
-
-
+            function, /* function */
             file!(), /* file */ 
             line!(), /* line */
             column!(), /* column */
@@ -143,29 +189,47 @@ macro_rules! reachable {
             $message, /* id */ 
             $details /* details */
         )
-    }
+}};
+
+    } // arm ($message:literal, $details:expr)
 }
 
 #[macro_export]
 macro_rules! unreachable {
     ($message:literal, $details:expr) => {
+
+{{
+        fn f(){}
+        fn type_name_of<T>(_: T) -> &'static str {
+            std::any::type_name::<T>()
+        }
+        static NAME: Lazy<&'static str> = Lazy::new(|| type_name_of(f));
+        static FUN_NAME: Lazy<&'static str> = Lazy::new(|| &NAME[..NAME.len() - 3]);
+
+        #[distributed_slice(ANTITHESIS_CATALOG)]
+        static REACHABILITY_CATALOG_ITEM: $crate::assert::CatalogInfo = $crate::assert::CatalogInfo{
+            assert_type: concat!("reachability"),
+            display_type: concat!("Unreachable"),
+            condition: false,
+            message: $message,
+            class: concat!(module_path!()),
+            function: &FUN_NAME, /* function: &Lazy<&str> */
+            file: concat!(file!()),
+            begin_line: line!(),
+            begin_column: column!(),
+            must_hit: true,
+            id: concat!($message)
+        };
+
+        let maybe_function = Lazy::get(&FUN_NAME);
+        let function = *maybe_function.unwrap_or(&"anonymous");
         assert_impl(
             "reachability", /* assert_type */ 
             "Unreachable", /* display_type */ 
             true, /* condition */
             $message, /* message */
             module_path!(), /* class */
-
-            { // taken from function!() in https://crates.io/crates/stdext
-                fn f(){}
-                fn type_name_of<T>(_: T) -> &'static str {
-                    std::any::type_name::<T>()
-                }
-                let name = type_name_of(f);
-                &name[..name.len() - 3]
-            }, /* function */
-
-
+            function, /* function */
             file!(), /* file */ 
             line!(), /* line */
             column!(), /* column */
@@ -174,6 +238,8 @@ macro_rules! unreachable {
             $message, /* id */ 
             $details /* details */
         )
-    }
+}};
+
+    } // arm ($message:literal, $details:expr)
 }
 
