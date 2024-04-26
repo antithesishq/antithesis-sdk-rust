@@ -12,6 +12,7 @@ use std::str::FromStr;
 mod macros;
 
 
+
 #[distributed_slice]
 pub static ANTITHESIS_CATALOG: [CatalogInfo];
 
