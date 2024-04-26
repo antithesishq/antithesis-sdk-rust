@@ -1,6 +1,13 @@
 use serde_json::{json, Value};
 use crate::internal;
 
+/// Call this function when your system and workload are fully initialized. 
+/// After this function is called, the Antithesis environment will take a 
+/// snapshot of your system and begin [injecting faults].
+///
+/// Calling this function multiple times, or from multiple processes, will 
+/// have no effect. Antithesis will treat the first time any process called 
+/// this function as the moment that the setup was completed.
 pub fn setup_complete(details: &Value) {
     let setup_value = json!({
         "antithesis_setup": json!({
@@ -11,6 +18,8 @@ pub fn setup_complete(details: &Value) {
     internal::dispatch_output(&setup_value)
 }
 
+/// Causes an event with the name and details provided,
+/// to be sent to the Fuzzer and Notebook
 pub fn send_event(name: &str, details: &Value) {
     let trimmed_name = name.trim();
     let owned_name: String = if trimmed_name.is_empty() {

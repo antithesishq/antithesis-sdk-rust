@@ -4,4 +4,4 @@ pub mod random;
 mod internal;
 pub mod prelude;
 
-pub use assert::{assert_impl, CatalogInfo};
+pub use assert::{assert_impl, assert_raw, CatalogInfo};

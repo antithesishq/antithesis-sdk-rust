@@ -217,6 +217,28 @@ impl AssertionInfo {
     }
 }
 
+
+#[allow(clippy::too_many_arguments)]
+pub fn assert_raw(
+        condition: bool,
+        message: &str,
+        details: &Value,
+        class: &str,
+        function: &str,
+        file: &str,
+        begin_line: u32,
+        begin_column: u32,
+        hit: bool,
+        must_hit: bool,
+        assert_type: &str,
+        display_type: &str,
+        id: &str) {
+
+    assert_impl( assert_type, display_type, condition, message, class, function, file, begin_line, begin_column, hit, must_hit, id, details)
+}
+
+/// This is a low-level method designed to be used by third-party frameworks. 
+/// Regular users of the assert package should not call it.
 #[allow(clippy::too_many_arguments)]
 pub fn assert_impl(
         assert_type: &str,
