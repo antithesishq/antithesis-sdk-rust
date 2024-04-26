@@ -12,7 +12,7 @@ use std::str::FromStr;
 mod macros;
 
 
-
+/// Catalog of all antithesis assertions provided
 #[distributed_slice]
 pub static ANTITHESIS_CATALOG: [CatalogInfo];
 
@@ -20,7 +20,7 @@ static ASSERT_TRACKER: Lazy<Mutex<HashMap<String, TrackingInfo>>> = Lazy::new(||
 
 static INIT_CATALOG: Once = Once::new();
 
-pub struct TrackingInfo {
+struct TrackingInfo {
     pub pass_count: u64,
     pub fail_count: u64,
 }
@@ -73,8 +73,8 @@ impl fmt::Display for AssertType {
     }
 }
 
+/// Internal representation for assertion catalog
 #[derive(Debug)]
-#[allow(dead_code)]
 pub struct CatalogInfo {
     pub assert_type: &'static str,
     pub display_type: &'static str,
@@ -260,6 +260,7 @@ pub fn assert_impl(
     let _ = &assertion.track_entry();
 }
 
+/// REegisters the Antithesis catalog of assertions provided
 pub fn antithesis_init() {
     INIT_CATALOG.call_once(|| {
         let no_details: Value = json!({});

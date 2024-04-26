@@ -1,3 +1,29 @@
+/// The assert module allows you to define new test properties 
+/// for your program or workload.
+///
+/// If the environment variable ANTITHESIS_SDK_LOCAL_OUTPUT is 
+/// set, these macros and functions will log to the file pointed 
+/// to by that variable using a structured JSON format defined in 
+/// the Antithesis SDK docs.
+/// This allows you to make use of the Antithesis assertions module 
+/// in your regular testing, or even in production. In particular, 
+/// very few assertions frameworks offer a convenient way to define 
+/// [Sometimes assertions], but they can be quite useful even outside 
+/// Antithesis.
+///
+/// Each macro/function in this module takes a parameter called message. 
+/// This value of this parameter will become part of the name of 
+/// the test property defined by the function, and will be viewable 
+/// in your [triage report], so it should be human interpretable. 
+/// Assertions in different parts of your code with the same message 
+/// value will be grouped into the same test property, but if one of 
+/// them fails you will be able to see which file and line number are 
+/// associated with each failure.
+///
+/// Each macro/function also takes a parameter called details. 
+/// This parameter allows you to optionally provide a JSON representation
+/// of context information that will be viewable in the 'details' 
+/// tab for any example or counterexample of the associated property.
 pub mod assert;
 
 
@@ -28,30 +54,4 @@ mod internal;
 pub mod prelude;
 
 
-/// The assert module allows you to define new test properties 
-/// for your program or workload.
-///
-/// If the environment variable ANTITHESIS_SDK_LOCAL_OUTPUT is 
-/// set, these macros and functions will log to the file pointed 
-/// to by that variable using a structured JSON format defined in 
-/// the Antithesis SDK docs.
-/// This allows you to make use of the Antithesis assertions module 
-/// in your regular testing, or even in production. In particular, 
-/// very few assertions frameworks offer a convenient way to define 
-/// [Sometimes assertions], but they can be quite useful even outside 
-/// Antithesis.
-///
-/// Each macro/function in this module takes a parameter called message. 
-/// This value of this parameter will become part of the name of 
-/// the test property defined by the function, and will be viewable 
-/// in your [triage report], so it should be human interpretable. 
-/// Assertions in different parts of your code with the same message 
-/// value will be grouped into the same test property, but if one of 
-/// them fails you will be able to see which file and line number are 
-/// associated with each failure.
-///
-/// Each macro/function also takes a parameter called details. 
-/// This parameter allows you to optionally provide a JSON representation
-/// of context information that will be viewable in the 'details' 
-/// tab for any example or counterexample of the associated property.
 pub use assert::{assert_impl, assert_raw, CatalogInfo};
