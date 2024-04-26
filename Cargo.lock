@@ -15,6 +15,7 @@ dependencies = [
  "rustc_version_runtime",
  "serde",
  "serde_json",
+ "small_ctor",
 ]
 
 [[package]]
@@ -214,6 +215,12 @@ dependencies = [
  "paste",
  "serde_json",
 ]
+
+[[package]]
+name = "small_ctor"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "533b934026d84df379afeed5d4f346d6c86622465b2eba78eef8940f01f97575"
 
 [[package]]
 name = "syn"

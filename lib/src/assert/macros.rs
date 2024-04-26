@@ -10,7 +10,7 @@ macro_rules! always {
         static NAME: Lazy<&'static str> = Lazy::new(|| type_name_of(f));
         static FUN_NAME: Lazy<&'static str> = Lazy::new(|| &NAME[..NAME.len() - 3]);
 
-        #[distributed_slice(ANTITHESIS_CATALOG)]
+        #[linkme::distributed_slice(ANTITHESIS_CATALOG)]
         static ALWAYS_CATALOG_ITEM: $crate::assert::CatalogInfo = $crate::assert::CatalogInfo{
             assert_type: concat!("always"),
             display_type: concat!("Always"),
@@ -59,7 +59,7 @@ macro_rules! always_or_unreachable {
         static NAME: Lazy<&'static str> = Lazy::new(|| type_name_of(f));
         static FUN_NAME: Lazy<&'static str> = Lazy::new(|| &NAME[..NAME.len() - 3]);
 
-        #[distributed_slice(ANTITHESIS_CATALOG)]
+        #[linkme::distributed_slice(ANTITHESIS_CATALOG)]
         static ALWAYS_CATALOG_ITEM: $crate::assert::CatalogInfo = $crate::assert::CatalogInfo{
             assert_type: concat!("always"),
             display_type: concat!("AlwaysOrUnreachable"),
@@ -108,7 +108,7 @@ macro_rules! sometimes {
         static NAME: Lazy<&'static str> = Lazy::new(|| type_name_of(f));
         static FUN_NAME: Lazy<&'static str> = Lazy::new(|| &NAME[..NAME.len() - 3]);
 
-        #[distributed_slice(ANTITHESIS_CATALOG)]
+        #[linkme::distributed_slice(ANTITHESIS_CATALOG)]
         static SOMETIMES_CATALOG_ITEM: $crate::assert::CatalogInfo = $crate::assert::CatalogInfo{
             assert_type: concat!("sometimes"),
             display_type: concat!("Sometimes"),
@@ -157,7 +157,7 @@ macro_rules! reachable {
         static NAME: Lazy<&'static str> = Lazy::new(|| type_name_of(f));
         static FUN_NAME: Lazy<&'static str> = Lazy::new(|| &NAME[..NAME.len() - 3]);
 
-        #[distributed_slice(ANTITHESIS_CATALOG)]
+        #[linkme::distributed_slice(ANTITHESIS_CATALOG)]
         static REACHABILITY_CATALOG_ITEM: $crate::assert::CatalogInfo = $crate::assert::CatalogInfo{
             assert_type: concat!("reachability"),
             display_type: concat!("Reachable"),
@@ -206,7 +206,7 @@ macro_rules! unreachable {
         static NAME: Lazy<&'static str> = Lazy::new(|| type_name_of(f));
         static FUN_NAME: Lazy<&'static str> = Lazy::new(|| &NAME[..NAME.len() - 3]);
 
-        #[distributed_slice(ANTITHESIS_CATALOG)]
+        #[linkme::distributed_slice(ANTITHESIS_CATALOG)]
         static REACHABILITY_CATALOG_ITEM: $crate::assert::CatalogInfo = $crate::assert::CatalogInfo{
             assert_type: concat!("reachability"),
             display_type: concat!("Unreachable"),
@@ -217,7 +217,7 @@ macro_rules! unreachable {
             file: concat!(file!()),
             begin_line: line!(),
             begin_column: column!(),
-            must_hit: true,
+            must_hit: false,
             id: concat!($message)
         };
 
@@ -226,7 +226,7 @@ macro_rules! unreachable {
         assert_impl(
             "reachability", /* assert_type */ 
             "Unreachable", /* display_type */ 
-            true, /* condition */
+            false, /* condition */
             $message, /* message */
             module_path!(), /* class */
             function, /* function */

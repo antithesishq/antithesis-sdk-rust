@@ -1,38 +1,7 @@
-use serde_json::{json, Value};
-use antithesis_sdk_rust::{lifecycle, random};
-use antithesis_sdk_rust::{always, always_or_unreachable, sometimes, reachable, unreachable};
-use antithesis_sdk_rust::assert::{CatalogInfo};
-use linkme::distributed_slice;
 use once_cell::sync::Lazy;
+use serde_json::{json, Value};
 
-
-use antithesis_sdk_rust::assert_impl;
-
-#[distributed_slice]
-pub static ANTITHESIS_CATALOG: [CatalogInfo];
-
-pub fn register_catalog() {
-    let no_details: Value = json!({});
-    for info in ANTITHESIS_CATALOG.iter() {
-        let f_name = once_cell::sync::Lazy::<&'static str>::force(info.function);
-        println!("Catalog Item ==> fn: '{}' display_type: '{}' - '{}' {}[{}]", f_name, info.display_type, info.message, info.file, info.begin_line);
-        assert_impl(
-            info.assert_type,
-            info.display_type,
-            info.condition,
-            info.message,
-            info.class,
-            f_name,
-            info.file,
-            info.begin_line,
-            info.begin_column,
-            false, /* hit */
-            info.must_hit,
-            info.id,
-            &no_details
-        );
-    }
-}
+use antithesis_sdk_rust::prelude::*;
 
 #[allow(dead_code)]
 fn random_demo() {
@@ -90,31 +59,31 @@ fn assert_demo() {
 
     // always
     let details = json!({"things": 13});
-    always!(true, "Things 777 look good", &details);
+    assert_always!(true, "Things 777 look good", &details);
 
     // alwaysOrUnreachable
     let details = json!({"more things": "red and blue"});
-    always_or_unreachable!(true, "A few colors", &details);
+    assert_always_or_unreachable!(true, "A few colors", &details);
 
     // sometimes
     let details = json!({"notes": [1,2,3,4,5]});
-    sometimes!(false, "Notes have small values", &details);
+    assert_sometimes!(false, "Notes have small values", &details);
 
 
     // reachable
     for i in 0..4 {
         let details = json!({"got here": {"name": "somewhere", "scores": [i*10,(i+1)*10,(i+2)*10]}});
-        reachable!("Someplace we need to be", &details);
+        assert_reachable!("Someplace we need to be", &details);
     }
 
-    // unreachable
+    // ant_unreachable
     let details = json!({"impossible!": {"name": "trouble", "weights": [100,200,300]}});
-    unreachable!("Impossible to get here", &details);
+    assert_unreachable!("Impossible to get here", &details);
 }
 
 pub fn main() {
 
-    register_catalog();
+    antithesis_init();
 
     random_demo();
 

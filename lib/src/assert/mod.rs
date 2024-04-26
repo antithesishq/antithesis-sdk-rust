@@ -3,6 +3,7 @@ use serde_json::{Value, json};
 use std::collections::HashMap;
 use crate::internal;
 use std::sync::Mutex;
+use linkme::distributed_slice;
 
 // Needed for AssertType
 use std::fmt;
@@ -10,6 +11,9 @@ use std::str::FromStr;
 
 mod macros;
 
+
+#[distributed_slice]
+pub static ANTITHESIS_CATALOG: [CatalogInfo];
 
 pub struct TrackingInfo {
     pub pass_count: u64,
@@ -62,22 +66,6 @@ impl fmt::Display for AssertType {
         };
         write!(f, "{text}")
     }
-}
-
-#[derive(Debug)]
-#[allow(dead_code)]
-pub struct MiniCat {
-    pub assert_type: &'static str,
-    pub display_type: &'static str,
-    // pub condition: bool,
-    pub message: &'static str,
-    // pub class: &'static str,
-    // pub function: &'static str,
-    // pub file: &'static str,
-    // pub begin_line: u32,
-    // pub begin_column: u32,
-    // pub must_hit: bool,
-    // pub id: &'static str,
 }
 
 #[derive(Debug)]
@@ -243,6 +231,29 @@ pub fn assert_impl(
 
     let assertion = AssertionInfo::new(assert_type, display_type, condition, message, class, function, file, begin_line, begin_column, hit, must_hit, id, details);
     let _ = &assertion.track_entry();
+}
+
+pub fn antithesis_init() {
+    let no_details: Value = json!({});
+    for info in ANTITHESIS_CATALOG.iter() {
+        let f_name = once_cell::sync::Lazy::<&'static str>::force(info.function);
+        println!("CatAlog Item ==> fn: '{}' display_type: '{}' - '{}' {}[{}]", f_name, info.display_type, info.message, info.file, info.begin_line);
+        assert_impl(
+            info.assert_type,
+            info.display_type,
+            info.condition,
+            info.message,
+            info.class,
+            f_name,
+            info.file,
+            info.begin_line,
+            info.begin_column,
+            false, /* hit */
+            info.must_hit,
+            info.id,
+            &no_details
+        );
+    }
 }
 
 #[cfg(test)]
