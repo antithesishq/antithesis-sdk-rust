@@ -26,6 +26,11 @@
 /// tab for any example or counterexample of the associated property.
 pub mod assert;
 
+// External crates used in assertion macros
+#[doc(hidden)]
+pub use once_cell;
+#[doc(hidden)]
+pub use linkme;
 
 /// The lifecycle module contains functions which inform the Antithesis 
 /// environment that particular test phases or milestones have been reached.

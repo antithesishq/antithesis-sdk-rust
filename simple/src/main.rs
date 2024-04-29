@@ -1,4 +1,3 @@
-use once_cell::sync::Lazy;
 use serde_json::{json, Value};
 
 use antithesis_sdk_rust::prelude::*;

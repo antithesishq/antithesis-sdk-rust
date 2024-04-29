@@ -210,9 +210,6 @@ name = "simple"
 version = "0.1.0"
 dependencies = [
  "antithesis_sdk_rust",
- "linkme",
- "once_cell",
- "paste",
  "serde_json",
 ]
 
