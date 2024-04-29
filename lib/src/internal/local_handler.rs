@@ -40,14 +40,14 @@ impl LocalHandler {
 impl LibHandler for LocalHandler {
     fn output(&self, value: &Value) -> Result<(), Error> {
         match &self.maybe_writer {
-            Some(b2w) => {
-                let mut b2w = b2w;
+            Some(writer_ref) => {
+                let mut writer_mut = writer_ref;
                 // The compact Display impl (selected using `{}`) of `serde_json::Value` contains no newlines,
                 // hence we are outputing valid JSONL format here.
                 // Using the `{:#}` format specifier may results in extra newlines and indentation.
                 // See https://docs.rs/serde_json/latest/serde_json/enum.Value.html#impl-Display-for-Value.
-                writeln!(b2w, "{}", value)?;
-                b2w.flush()?;
+                writeln!(writer_mut, "{}", value)?;
+                writer_mut.flush()?;
                 Ok(())
             },
             None => Ok(())

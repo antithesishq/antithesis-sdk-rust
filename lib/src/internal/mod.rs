@@ -14,14 +14,16 @@ const PROTOCOL_VERSION: &str = "1.0.0";
 // Tracks SDK releases
 const SDK_VERSION: &str = "0.1.1";
 
-static LIB_HANDLER: Lazy<Box<dyn LibHandler + Sync + Send>> = Lazy::new(|| {
-    match VoidstarHandler::try_load() {
+pub(crate) static LIB_HANDLER: Lazy<Box<dyn LibHandler + Sync + Send>> = Lazy::new(|| {
+    let handler: Box<dyn LibHandler + Sync + Send> = match VoidstarHandler::try_load() {
         Ok(handler) => Box::new(handler),
         Err(_) => Box::new(LocalHandler::new()),
-    }
+    };
+    let _ = handler.output(&sdk_info());
+    handler
 });
 
-trait LibHandler {
+pub(crate) trait LibHandler {
     fn output(&self, value: &Value) -> Result<(), Error>;
     fn random(&self) -> u64;
 }

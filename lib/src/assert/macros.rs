@@ -1,179 +1,114 @@
-// use linkme::distributed_slice;
-
-        // #[distributed_slice(ANTITHESIS_CATALOG)]
+#[cfg(not(feature="no-antithesis-sdk"))]
+#[doc(hidden)]
 #[macro_export]
-macro_rules! always {
-    ($condition:expr, $message:literal, $details:expr, $x:ident) => {
+macro_rules! assert_helper {
+    (condition = $condition:expr, $message:literal, $details:expr, $assert_type:literal, $display_type:literal, must_hit = $must_hit:literal) => {{
+        // Force evaluation of expressions.
+        let condition = $condition;
+        let details = $details;
 
-        // assert_catalog!({
-        //     assert_type: "always",
-        //     display_type: "Always",
-        //     message: $message,
-        // });
+        use $crate::once_cell::sync::Lazy;
+        fn f(){}
+        fn type_name_of<T>(_: T) -> &'static str {
+            ::std::any::type_name::<T>()
+        }
+        static NAME: Lazy<&'static str> = Lazy::new(|| type_name_of(f));
+        static FUN_NAME: Lazy<&'static str> = Lazy::new(|| &NAME[..NAME.len() - 3]);
 
-        static ALWAYS_241: antithesis_sdk_rust::assert::CatalogInfo = antithesis_sdk_rust::assert::CatalogInfo{
-            assert_type: concat!("always"),
-            display_type: concat!("Always"),
+        #[$crate::linkme::distributed_slice($crate::assert::ANTITHESIS_CATALOG)]
+        #[linkme(crate = $crate::linkme)] // Refer to our re-exported linkme.
+        static ALWAYS_CATALOG_ITEM: $crate::assert::CatalogInfo = $crate::assert::CatalogInfo{
+            assert_type: $assert_type,
+            display_type: $display_type,
             condition: false,
             message: $message,
-            class: concat!(module_path!()),
-            function: concat!("yes"),
-            file: concat!(file!()),
-            begin_line: line!(), /* line */
-            begin_column: column!(), /* column */
-            must_hit: true, /* must-hit */ 
-            id: concat!($message) /* id */ 
+            class: ::std::module_path!(),
+            function: &FUN_NAME, /* function: &Lazy<&str> */
+            file: ::std::file!(),
+            begin_line: ::std::line!(),
+            begin_column: ::std::column!(),
+            must_hit: $must_hit,
+            id: $message
         };
 
-        assert_impl(
-            "always", /* assert_type */ 
-            "Always", /* display_type */ 
-            $condition, /* condition */
+        let function = Lazy::force(&FUN_NAME);
+        $crate::assert::assert_impl(
+            $assert_type, /* assert_type */ 
+            $display_type, /* display_type */ 
+            condition, /* condition */
             $message, /* message */
-            module_path!(), /* class */
-
-            { // taken from function!() in https://crates.io/crates/stdext
-                fn f(){}
-                fn type_name_of<T>(_: T) -> &'static str {
-                    std::any::type_name::<T>()
-                }
-                let name = type_name_of(f);
-                &name[..name.len() - 3]
-            }, /* function */
-
-            file!(), /* file */ 
-            line!(), /* line */
-            column!(), /* column */
+            ::std::module_path!(), /* class */
+            function, /* function */
+            ::std::file!(), /* file */ 
+            ::std::line!(), /* line */
+            ::std::column!(), /* column */
             true,/* hit */ 
-            true, /* must-hit */ 
+            $must_hit, /* must-hit */ 
             $message, /* id */ 
-            $details /* details */
+            details /* details */
         )
+    }}
+}
+#[cfg(feature="no-antithesis-sdk")]
+#[doc(hidden)]
+#[macro_export]
+macro_rules! assert_helper {
+    (condition = $condition:expr, $message:literal, $details:expr, $assert_type:literal, $display_type:literal, must_hit = $must_hit:literal) => {{
+        // Force evaluation of expressions.
+        let condition = $condition;
+        let details = $details;
+    }}
+}
+
+/// Assert that condition is true every time this function is called, AND that it is 
+/// called at least once. This test property will be viewable in the "Antithesis SDK: Always" 
+/// group of your triage report.
+#[macro_export]
+macro_rules! always {
+    ($condition:expr, $message:literal, $details:expr) => {
+        $crate::assert_helper!(condition = $condition, $message, $details, "always", "Always", must_hit = true)
     }
 }
 
+/// Assert that condition is true every time this function is called. Unlike the Always 
+/// function, the test property spawned by AlwaysOrUnreachable will not be marked as 
+/// failing if the function is never invoked. This test property will be viewable in 
+/// the "Antithesis SDK: Always" group of your triage report.
 #[macro_export]
 macro_rules! always_or_unreachable {
     ($condition:expr, $message:literal, $details:expr) => {
-
-        assert_impl(
-            "always", /* assert_type */ 
-            "AlwaysOrUnreachable", /* display_type */ 
-            $condition, /* condition */
-            $message, /* message */
-            module_path!(), /* class */
-
-            { // taken from function!() in https://crates.io/crates/stdext
-                fn f(){}
-                fn type_name_of<T>(_: T) -> &'static str {
-                    std::any::type_name::<T>()
-                }
-                let name = type_name_of(f);
-                &name[..name.len() - 3]
-            }, /* function */
-
-
-            file!(), /* file */ 
-            line!(), /* line */
-            column!(), /* column */
-            true,/* hit */ 
-            false, /* must-hit */ 
-            $message, /* id */ 
-            $details /* details */
-        )
+        $crate::assert_helper!(condition = $condition, $message, $details, "always", "AlwaysOrUnreachable", must_hit = false)
     }
 }
 
+/// Assert that condition is true at least one time that this function was called. 
+/// The test property spawned by Sometimes will be marked as failing if this function 
+/// is never called, or if condition is false every time that it is called. This 
+/// test property will be viewable in the "Antithesis SDK: Sometimes" group.
 #[macro_export]
 macro_rules! sometimes {
     ($condition:expr, $message:literal, $details:expr) => {
-        assert_impl(
-            "sometimes", /* assert_type */ 
-            "Sometimes", /* display_type */ 
-            $condition, /* condition */
-            $message, /* message */
-            module_path!(), /* class */
-
-            { // taken from function!() in https://crates.io/crates/stdext
-                fn f(){}
-                fn type_name_of<T>(_: T) -> &'static str {
-                    std::any::type_name::<T>()
-                }
-                let name = type_name_of(f);
-                &name[..name.len() - 3]
-            }, /* function */
-
-
-            file!(), /* file */ 
-            line!(), /* line */
-            column!(), /* column */
-            true,/* hit */ 
-            true, /* must-hit */ 
-            $message, /* id */ 
-            $details /* details */
-        )
+        $crate::assert_helper!(condition = $condition, $message, $details, "sometimes", "Sometimes", must_hit = true)
     }
 }
 
+/// Assert that a line of code is reached at least once. The test property spawned by 
+/// Reachable will be marked as failing if this function is never called. This test 
+/// property will be viewable in the "Antithesis SDK: Reachablity assertions" group.
 #[macro_export]
 macro_rules! reachable {
     ($message:literal, $details:expr) => {
-        assert_impl(
-            "reachability", /* assert_type */ 
-            "Reachable", /* display_type */ 
-            true, /* condition */
-            $message, /* message */
-            module_path!(), /* class */
-
-            { // taken from function!() in https://crates.io/crates/stdext
-                fn f(){}
-                fn type_name_of<T>(_: T) -> &'static str {
-                    std::any::type_name::<T>()
-                }
-                let name = type_name_of(f);
-                &name[..name.len() - 3]
-            }, /* function */
-
-
-            file!(), /* file */ 
-            line!(), /* line */
-            column!(), /* column */
-            true,/* hit */ 
-            true, /* must-hit */ 
-            $message, /* id */ 
-            $details /* details */
-        )
+        $crate::assert_helper!(condition = true, $message, $details, "reachability", "Reachable", must_hit = true)
     }
 }
 
+/// Assert that a line of code is never reached. The test property spawned by Unreachable 
+/// will be marked as failing if this function is ever called. This test property will 
+/// be viewable in the "Antithesis SDK: Reachablity assertions" group.
 #[macro_export]
 macro_rules! unreachable {
     ($message:literal, $details:expr) => {
-        assert_impl(
-            "reachability", /* assert_type */ 
-            "Unreachable", /* display_type */ 
-            true, /* condition */
-            $message, /* message */
-            module_path!(), /* class */
-
-            { // taken from function!() in https://crates.io/crates/stdext
-                fn f(){}
-                fn type_name_of<T>(_: T) -> &'static str {
-                    std::any::type_name::<T>()
-                }
-                let name = type_name_of(f);
-                &name[..name.len() - 3]
-            }, /* function */
-
-
-            file!(), /* file */ 
-            line!(), /* line */
-            column!(), /* column */
-            true,/* hit */ 
-            false, /* must-hit */ 
-            $message, /* id */ 
-            $details /* details */
-        )
+        $crate::assert_helper!(condition = false, $message, $details, "reachability", "Unreachable", must_hit = false)
     }
 }
 

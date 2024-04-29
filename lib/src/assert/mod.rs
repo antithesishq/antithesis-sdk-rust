@@ -1,8 +1,9 @@
 use once_cell::sync::Lazy;
 use serde_json::{Value, json};
 use std::collections::HashMap;
+use std::sync::{Mutex};
 use crate::internal;
-use std::sync::Mutex;
+use linkme::distributed_slice;
 
 // Needed for AssertType
 use std::fmt;
@@ -11,7 +12,43 @@ use std::str::FromStr;
 mod macros;
 
 
-pub struct TrackingInfo {
+/// Catalog of all antithesis assertions provided
+#[distributed_slice]
+pub static ANTITHESIS_CATALOG: [CatalogInfo];
+
+// Only need an ASSET_TRACKER if there are actually assertions 'hit' 
+// (i.e. encountered and invoked at runtime).
+//
+// Typically runtime assertions use the macros always!(), sometimes!(), etc.
+// or, a client is using the 'raw' interface 'assert_raw' at runtime.
+//
+pub(crate) static ASSERT_TRACKER: Lazy<Mutex<HashMap<String, TrackingInfo>>> = 
+   Lazy::new(|| Mutex::new(HashMap::new()));
+
+pub(crate) static INIT_CATALOG: Lazy<()> = Lazy::new(|| {
+    let no_details: Value = json!({});
+    for info in ANTITHESIS_CATALOG.iter() {
+        let f_name = info.function.as_ref();
+        println!("CatAlog Item ==> fn: '{}' display_type: '{}' - '{}' {}[{}]", f_name, info.display_type, info.message, info.file, info.begin_line);
+        assert_impl(
+            info.assert_type,
+            info.display_type,
+            info.condition,
+            info.message,
+            info.class,
+            f_name,
+            info.file,
+            info.begin_line,
+            info.begin_column,
+            false, /* hit */
+            info.must_hit,
+            info.id,
+            &no_details
+        );
+    }
+});
+
+pub(crate) struct TrackingInfo {
     pub pass_count: u64,
     pub fail_count: u64,
 }
@@ -64,31 +101,15 @@ impl fmt::Display for AssertType {
     }
 }
 
+/// Internal representation for assertion catalog
 #[derive(Debug)]
-#[allow(dead_code)]
-pub struct MiniCat {
-    pub assert_type: &'static str,
-    pub display_type: &'static str,
-    // pub condition: bool,
-    pub message: &'static str,
-    // pub class: &'static str,
-    // pub function: &'static str,
-    // pub file: &'static str,
-    // pub begin_line: u32,
-    // pub begin_column: u32,
-    // pub must_hit: bool,
-    // pub id: &'static str,
-}
-
-#[derive(Debug)]
-#[allow(dead_code)]
 pub struct CatalogInfo {
     pub assert_type: &'static str,
     pub display_type: &'static str,
     pub condition: bool,
     pub message: &'static str,
     pub class: &'static str,
-    pub function: &'static str,
+    pub function: &'static Lazy<&'static str>,
     pub file: &'static str,
     pub begin_line: u32,
     pub begin_column: u32,
@@ -193,6 +214,7 @@ impl AssertionInfo {
         };
         drop(tracker); // release the lock asap
         if emitting {
+            Lazy::force(&INIT_CATALOG);
             self.emit();
         }
     }
@@ -222,8 +244,28 @@ impl AssertionInfo {
     }
 }
 
-static ASSERT_TRACKER: Lazy<Mutex<HashMap<String, TrackingInfo>>> = Lazy::new(|| Mutex::new(HashMap::new()));
 
+#[allow(clippy::too_many_arguments)]
+pub fn assert_raw(
+        condition: bool,
+        message: &str,
+        details: &Value,
+        class: &str,
+        function: &str,
+        file: &str,
+        begin_line: u32,
+        begin_column: u32,
+        hit: bool,
+        must_hit: bool,
+        assert_type: &str,
+        display_type: &str,
+        id: &str) {
+
+    assert_impl( assert_type, display_type, condition, message, class, function, file, begin_line, begin_column, hit, must_hit, id, details)
+}
+
+/// This is a low-level method designed to be used by third-party frameworks. 
+/// Regular users of the assert package should not call it.
 #[allow(clippy::too_many_arguments)]
 pub fn assert_impl(
         assert_type: &str,
@@ -239,7 +281,6 @@ pub fn assert_impl(
         must_hit: bool,
         id: &str,
         details: &Value) {
-
 
     let assertion = AssertionInfo::new(assert_type, display_type, condition, message, class, function, file, begin_line, begin_column, hit, must_hit, id, details);
     let _ = &assertion.track_entry();

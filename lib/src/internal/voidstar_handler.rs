@@ -5,7 +5,7 @@ use std::io::{Error};
 
 use crate::internal::{LibHandler};
 
-const LIB_NAME: &str = "/usr/lib/libmockstar.so";
+const LIB_NAME: &str = "/usr/lib/libvoidstar.so";
 
 pub struct VoidstarHandler {
     // Not used directly but exists to ensure the library is loaded
@@ -14,6 +14,7 @@ pub struct VoidstarHandler {
     // SAFETY: The memory pointed by `s` must be valid up to `l` bytes.
     fuzz_json_data: unsafe fn(s: *const c_char, l: size_t),
     fuzz_get_random: fn() -> u64,
+    fuzz_flush: fn(),
 }
 
 impl VoidstarHandler {
@@ -31,7 +32,8 @@ impl VoidstarHandler {
             let lib = Library::new(LIB_NAME)?;
             let fuzz_json_data = *lib.get(b"fuzz_json_data\0")?;
             let fuzz_get_random = *lib.get(b"fuzz_get_random\0")?;
-            Ok(VoidstarHandler { _lib: lib, fuzz_json_data, fuzz_get_random })
+            let fuzz_flush = *lib.get(b"fuzz_flush\0")?;
+            Ok(VoidstarHandler { _lib: lib, fuzz_json_data, fuzz_get_random, fuzz_flush })
         }
     }
 }
@@ -43,6 +45,7 @@ impl LibHandler for VoidstarHandler {
         // that we just initialized above.
         unsafe {
             (self.fuzz_json_data)(payload.as_bytes().as_ptr() as *const c_char, payload.len());
+            (self.fuzz_flush)();
         }
         Ok(())
     }
