@@ -16,7 +16,16 @@ mod macros;
 #[distributed_slice]
 pub static ANTITHESIS_CATALOG: [CatalogInfo];
 
-pub(crate) static ASSERT_TRACKER: Lazy<Mutex<HashMap<String, TrackingInfo>>> = Lazy::new(|| {
+// Only need an ASSET_TRACKER if there are actually assertions 'hit' 
+// (i.e. encountered and invoked at runtime).
+//
+// Typically runtime assertions use the macros always!(), sometimes!(), etc.
+// or, a client is using the 'raw' interface 'assert_raw' at runtime.
+//
+pub(crate) static ASSERT_TRACKER: Lazy<Mutex<HashMap<String, TrackingInfo>>> = 
+   Lazy::new(|| Mutex::new(HashMap::new()));
+
+pub(crate) static INIT_CATALOG: Lazy<()> = Lazy::new(|| {
     let no_details: Value = json!({});
     for info in ANTITHESIS_CATALOG.iter() {
         let f_name = info.function.as_ref();
@@ -37,7 +46,6 @@ pub(crate) static ASSERT_TRACKER: Lazy<Mutex<HashMap<String, TrackingInfo>>> = L
             &no_details
         );
     }
-    Mutex::new(HashMap::new())
 });
 
 pub(crate) struct TrackingInfo {
@@ -206,6 +214,7 @@ impl AssertionInfo {
         };
         drop(tracker); // release the lock asap
         if emitting {
+            Lazy::force(&INIT_CATALOG);
             self.emit();
         }
     }

@@ -16,3 +16,6 @@ small_ctor = "0.1.1"
 
 [dev-dependencies]
 serde = { version = "1.0", features = ["derive"] }
+
+[features]
+no-antithesis-sdk = []

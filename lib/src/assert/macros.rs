@@ -1,7 +1,12 @@
+#[cfg(not(feature="no-antithesis-sdk"))]
 #[doc(hidden)]
 #[macro_export]
 macro_rules! assert_helper {
-    ($condition:expr, $message:literal, $details:expr, $assert_type:literal, $display_type:literal, $must_hit:literal) => {{
+    (condition = $condition:expr, $message:literal, $details:expr, $assert_type:literal, $display_type:literal, must_hit = $must_hit:literal) => {{
+        // Force evaluation of expressions.
+        let condition = $condition;
+        let details = $details;
+
         use $crate::once_cell::sync::Lazy;
         fn f(){}
         fn type_name_of<T>(_: T) -> &'static str {
@@ -10,7 +15,7 @@ macro_rules! assert_helper {
         static NAME: Lazy<&'static str> = Lazy::new(|| type_name_of(f));
         static FUN_NAME: Lazy<&'static str> = Lazy::new(|| &NAME[..NAME.len() - 3]);
 
-        #[$crate::linkme::distributed_slice(ANTITHESIS_CATALOG)]
+        #[$crate::linkme::distributed_slice($crate::assert::ANTITHESIS_CATALOG)]
         #[linkme(crate = $crate::linkme)] // Refer to our re-exported linkme.
         static ALWAYS_CATALOG_ITEM: $crate::assert::CatalogInfo = $crate::assert::CatalogInfo{
             assert_type: $assert_type,
@@ -26,12 +31,8 @@ macro_rules! assert_helper {
             id: $message
         };
 
-        let maybe_function = Lazy::get(&FUN_NAME);
-        let function = *maybe_function.unwrap_or(&"anonymous");
-        // Force evaluation of expressions.
-        let condition = $condition;
-        let details = $details;
-        assert_impl(
+        let function = Lazy::force(&FUN_NAME);
+        $crate::assert::assert_impl(
             $assert_type, /* assert_type */ 
             $display_type, /* display_type */ 
             condition, /* condition */
@@ -48,6 +49,16 @@ macro_rules! assert_helper {
         )
     }}
 }
+#[cfg(feature="no-antithesis-sdk")]
+#[doc(hidden)]
+#[macro_export]
+macro_rules! assert_helper {
+    (condition = $condition:expr, $message:literal, $details:expr, $assert_type:literal, $display_type:literal, must_hit = $must_hit:literal) => {{
+        // Force evaluation of expressions.
+        let condition = $condition;
+        let details = $details;
+    }}
+}
 
 /// Assert that condition is true every time this function is called, AND that it is 
 /// called at least once. This test property will be viewable in the "Antithesis SDK: Always" 
@@ -55,7 +66,7 @@ macro_rules! assert_helper {
 #[macro_export]
 macro_rules! always {
     ($condition:expr, $message:literal, $details:expr) => {
-        $crate::assert_helper!($condition, $message, $details, "always", "Always", true)
+        $crate::assert_helper!(condition = $condition, $message, $details, "always", "Always", must_hit = true)
     }
 }
 
@@ -66,7 +77,7 @@ macro_rules! always {
 #[macro_export]
 macro_rules! always_or_unreachable {
     ($condition:expr, $message:literal, $details:expr) => {
-        $crate::assert_helper!($condition, $message, $details, "always", "AlwaysOrUnreachable", false)
+        $crate::assert_helper!(condition = $condition, $message, $details, "always", "AlwaysOrUnreachable", must_hit = false)
     }
 }
 
@@ -77,7 +88,7 @@ macro_rules! always_or_unreachable {
 #[macro_export]
 macro_rules! sometimes {
     ($condition:expr, $message:literal, $details:expr) => {
-        $crate::assert_helper!($condition, $message, $details, "sometimes", "Sometimes", true)
+        $crate::assert_helper!(condition = $condition, $message, $details, "sometimes", "Sometimes", must_hit = true)
     }
 }
 
@@ -87,7 +98,7 @@ macro_rules! sometimes {
 #[macro_export]
 macro_rules! reachable {
     ($message:literal, $details:expr) => {
-        $crate::assert_helper!(true, $message, $details, "reachability", "Reachable", true)
+        $crate::assert_helper!(condition = true, $message, $details, "reachability", "Reachable", must_hit = true)
     }
 }
 
@@ -97,7 +108,7 @@ macro_rules! reachable {
 #[macro_export]
 macro_rules! unreachable {
     ($message:literal, $details:expr) => {
-        $crate::assert_helper!(false, $message, $details, "reachability", "Unreachable", false)
+        $crate::assert_helper!(condition = false, $message, $details, "reachability", "Unreachable", must_hit = false)
     }
 }
 

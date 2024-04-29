@@ -83,9 +83,9 @@ fn assert_demo() {
 pub fn main() {
 
     
-    // antithesis_init();
-    // antithesis_init();
-    // antithesis_init();
+    antithesis_init();
+    antithesis_init();
+    antithesis_init();
 
     random_demo();
 

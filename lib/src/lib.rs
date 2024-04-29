@@ -61,7 +61,7 @@ pub mod prelude;
 /// Global initialization logic
 pub fn antithesis_init() {
     Lazy::force(&internal::LIB_HANDLER);
-    Lazy::force(&assert::ASSERT_TRACKER);
+    Lazy::force(&assert::INIT_CATALOG);
 }
 
 pub use assert::{assert_impl, assert_raw, CatalogInfo};
