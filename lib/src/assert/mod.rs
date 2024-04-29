@@ -1,7 +1,7 @@
 use once_cell::sync::Lazy;
 use serde_json::{Value, json};
 use std::collections::HashMap;
-use std::sync::{Mutex, Once};
+use std::sync::{Mutex};
 use crate::internal;
 use linkme::distributed_slice;
 
@@ -16,11 +16,31 @@ mod macros;
 #[distributed_slice]
 pub static ANTITHESIS_CATALOG: [CatalogInfo];
 
-static ASSERT_TRACKER: Lazy<Mutex<HashMap<String, TrackingInfo>>> = Lazy::new(|| Mutex::new(HashMap::new()));
+pub(crate) static ASSERT_TRACKER: Lazy<Mutex<HashMap<String, TrackingInfo>>> = Lazy::new(|| {
+    let no_details: Value = json!({});
+    for info in ANTITHESIS_CATALOG.iter() {
+        let f_name = info.function.as_ref();
+        println!("CatAlog Item ==> fn: '{}' display_type: '{}' - '{}' {}[{}]", f_name, info.display_type, info.message, info.file, info.begin_line);
+        assert_impl(
+            info.assert_type,
+            info.display_type,
+            info.condition,
+            info.message,
+            info.class,
+            f_name,
+            info.file,
+            info.begin_line,
+            info.begin_column,
+            false, /* hit */
+            info.must_hit,
+            info.id,
+            &no_details
+        );
+    }
+    Mutex::new(HashMap::new())
+});
 
-static INIT_CATALOG: Once = Once::new();
-
-struct TrackingInfo {
+pub(crate) struct TrackingInfo {
     pub pass_count: u64,
     pub fail_count: u64,
 }
@@ -186,9 +206,6 @@ impl AssertionInfo {
         };
         drop(tracker); // release the lock asap
         if emitting {
-            if !INIT_CATALOG.is_completed(){
-                antithesis_init();
-            }
             self.emit();
         }
     }
@@ -258,32 +275,6 @@ pub fn assert_impl(
 
     let assertion = AssertionInfo::new(assert_type, display_type, condition, message, class, function, file, begin_line, begin_column, hit, must_hit, id, details);
     let _ = &assertion.track_entry();
-}
-
-/// REegisters the Antithesis catalog of assertions provided
-pub fn antithesis_init() {
-    INIT_CATALOG.call_once(|| {
-        let no_details: Value = json!({});
-        for info in ANTITHESIS_CATALOG.iter() {
-            let f_name = once_cell::sync::Lazy::<&'static str>::force(info.function);
-            println!("CatAlog Item ==> fn: '{}' display_type: '{}' - '{}' {}[{}]", f_name, info.display_type, info.message, info.file, info.begin_line);
-            assert_impl(
-                info.assert_type,
-                info.display_type,
-                info.condition,
-                info.message,
-                info.class,
-                f_name,
-                info.file,
-                info.begin_line,
-                info.begin_column,
-                false, /* hit */
-                info.must_hit,
-                info.id,
-                &no_details
-            );
-        }
-    })
 }
 
 #[cfg(test)]

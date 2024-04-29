@@ -58,5 +58,11 @@ mod internal;
 /// Convenience to import all macros and functions
 pub mod prelude;
 
+/// Global initialization logic
+pub fn antithesis_init() {
+    Lazy::force(&internal::LIB_HANDLER);
+    Lazy::force(&assert::ASSERT_TRACKER);
+}
 
 pub use assert::{assert_impl, assert_raw, CatalogInfo};
+use once_cell::sync::Lazy;

@@ -2,7 +2,6 @@ use once_cell::sync::Lazy;
 use rustc_version_runtime::version;
 use serde_json::{Value, json};
 use std::io::{Error};
-use std::sync::Once;
 use local_handler::LocalHandler;
 use voidstar_handler::{VoidstarHandler};
 
@@ -15,14 +14,16 @@ const PROTOCOL_VERSION: &str = "1.0.0";
 // Tracks SDK releases
 const SDK_VERSION: &str = "0.1.1";
 
-static LIB_HANDLER: Lazy<Box<dyn LibHandler + Sync + Send>> = Lazy::new(|| {
-    match VoidstarHandler::try_load() {
+pub(crate) static LIB_HANDLER: Lazy<Box<dyn LibHandler + Sync + Send>> = Lazy::new(|| {
+    let handler: Box<dyn LibHandler + Sync + Send> = match VoidstarHandler::try_load() {
         Ok(handler) => Box::new(handler),
         Err(_) => Box::new(LocalHandler::new()),
-    }
+    };
+    let _ = handler.output(&sdk_info());
+    handler
 });
 
-trait LibHandler {
+pub(crate) trait LibHandler {
     fn output(&self, value: &Value) -> Result<(), Error>;
     fn random(&self) -> u64;
 }
@@ -49,16 +50,7 @@ pub fn dispatch_random() -> u64 {
 // Made public so it can be invoked from the antithesis_sdk_rust::lifecycle 
 // and antithesis_sdk_rust::assert module
 pub fn dispatch_output(json_data: &Value) {
-
-    static INIT: Once = Once::new();
-
-    INIT.call_once(|| {
-        let sdk_value: Value = sdk_info();
-        let _ = LIB_HANDLER.output(&sdk_value);
-    });
-
     let _ = LIB_HANDLER.output(json_data);
-
 }
 
 fn sdk_info() -> Value {
