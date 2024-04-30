@@ -10,12 +10,10 @@ dependencies = [
  "libloading",
  "linkme",
  "once_cell",
- "paste",
  "rand",
  "rustc_version_runtime",
  "serde",
  "serde_json",
- "small_ctor",
 ]
 
 [[package]]
@@ -82,12 +80,6 @@ name = "once_cell"
 version = "1.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3fdb12b2476b595f9358c5161aa467c2438859caa136dec86c26fdd2efe17b92"
-
-[[package]]
-name = "paste"
-version = "1.0.14"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "de3145af08024dea9fa9914f381a17b8fc6034dfb00f3a84013f7ff43f29ed4c"
 
 [[package]]
 name = "ppv-lite86"
@@ -212,12 +204,6 @@ dependencies = [
  "antithesis_sdk_rust",
  "serde_json",
 ]
-
-[[package]]
-name = "small_ctor"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "533b934026d84df379afeed5d4f346d6c86622465b2eba78eef8940f01f97575"
 
 [[package]]
 name = "syn"
