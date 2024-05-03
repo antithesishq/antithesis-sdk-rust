@@ -1,6 +1,6 @@
 use once_cell::sync::Lazy;
 use rustc_version_runtime::version;
-use serde_json::{Value, json};
+use serde::Serialize;
 use std::io::{Error};
 use local_handler::LocalHandler;
 use voidstar_handler::{VoidstarHandler};
@@ -8,23 +8,43 @@ use voidstar_handler::{VoidstarHandler};
 mod local_handler;
 mod voidstar_handler;
 
+#[derive(Serialize, Debug)]
+struct AntithesisLanguageInfo {
+    name: &'static str,
+    version: String,
+}
+
+#[derive(Serialize, Debug)]
+struct AntithesisVersionInfo {
+    language: AntithesisLanguageInfo,
+    sdk_version: &'static str,
+    protocol_version: &'static str,
+}
+
+#[derive(Serialize, Debug)]
+struct AntithesisSDKInfo {
+    antithesis_sdk: AntithesisVersionInfo,
+}
+
 // Hardly ever changes, refers to the underlying JSON representation
 const PROTOCOL_VERSION: &str = "1.0.0";
 
 // Tracks SDK releases
-const SDK_VERSION: &str = "0.1.1";
+const SDK_VERSION: &str = "0.1.2";
 
 pub(crate) static LIB_HANDLER: Lazy<Box<dyn LibHandler + Sync + Send>> = Lazy::new(|| {
     let handler: Box<dyn LibHandler + Sync + Send> = match VoidstarHandler::try_load() {
         Ok(handler) => Box::new(handler),
         Err(_) => Box::new(LocalHandler::new()),
     };
-    let _ = handler.output(&sdk_info());
+    let s = serde_json::to_string(&sdk_info()).unwrap_or("{}".to_owned());
+    let _ = handler.output(s.as_str());
     handler
 });
 
+
 pub(crate) trait LibHandler {
-    fn output(&self, value: &Value) -> Result<(), Error>;
+    fn output(&self, value: &str) -> Result<(), Error>;
     fn random(&self) -> u64;
 }
 
@@ -49,23 +69,24 @@ pub fn dispatch_random() -> u64 {
 //
 // Made public so it can be invoked from the antithesis_sdk_rust::lifecycle 
 // and antithesis_sdk_rust::assert module
-pub fn dispatch_output(json_data: &Value) {
-    let _ = LIB_HANDLER.output(json_data);
+pub fn dispatch_output<T: Serialize+?Sized>(json_data: &T) {
+    let s = serde_json::to_string(json_data).unwrap_or("{}".to_owned());
+    let _ = LIB_HANDLER.output(s.as_str());
 }
 
-fn sdk_info() -> Value {
-    let language_info: Value = json!({
-        "name": "Rust",
-        "version": version().to_string()
-    });
-    
-    let version_info: Value = json!({
-        "language": language_info,
-        "sdk_version": SDK_VERSION,
-        "protocol_version": PROTOCOL_VERSION
-    });
-    
-    json!({
-        "antithesis_sdk": version_info
-    })
+fn sdk_info() -> AntithesisSDKInfo {
+    let language_data = AntithesisLanguageInfo{
+        name: "Rust",
+        version: version().to_string(),
+    };
+
+    let version_data = AntithesisVersionInfo{
+        language: language_data,
+        sdk_version: SDK_VERSION,
+        protocol_version: PROTOCOL_VERSION,
+    };
+
+    AntithesisSDKInfo{
+        antithesis_sdk: version_data,
+    }
 }

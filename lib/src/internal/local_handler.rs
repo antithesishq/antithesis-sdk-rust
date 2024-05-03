@@ -1,4 +1,3 @@
-use serde_json::{Value};
 use std::env;
 use std::fs::File;
 use std::io::{Write, Error};
@@ -38,7 +37,7 @@ impl LocalHandler {
 }
 
 impl LibHandler for LocalHandler {
-    fn output(&self, value: &Value) -> Result<(), Error> {
+    fn output(&self, value: &str) -> Result<(), Error> {
         match &self.maybe_writer {
             Some(writer_ref) => {
                 let mut writer_mut = writer_ref;

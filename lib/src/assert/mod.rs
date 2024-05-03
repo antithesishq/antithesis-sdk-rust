@@ -1,13 +1,10 @@
 use once_cell::sync::Lazy;
 use serde_json::{Value, json};
+use serde::Serialize;
 use std::collections::HashMap;
 use std::sync::{Mutex};
 use crate::internal;
 use linkme::distributed_slice;
-
-// Needed for AssertType
-use std::fmt;
-use std::str::FromStr;
 
 mod macros;
 
@@ -28,21 +25,20 @@ pub(crate) static ASSERT_TRACKER: Lazy<Mutex<HashMap<String, TrackingInfo>>> =
 pub(crate) static INIT_CATALOG: Lazy<()> = Lazy::new(|| {
     let no_details: Value = json!({});
     for info in ANTITHESIS_CATALOG.iter() {
-        let f_name = info.function.as_ref();
-        println!("CatAlog Item ==> fn: '{}' display_type: '{}' - '{}' {}[{}]", f_name, info.display_type, info.message, info.file, info.begin_line);
+        let f_name: &str = info.function.as_ref();
         assert_impl(
             info.assert_type,
-            info.display_type,
+            info.display_type.to_owned(),
             info.condition,
-            info.message,
-            info.class,
-            f_name,
-            info.file,
+            info.message.to_owned(),
+            info.class.to_owned(),
+            f_name.to_owned(),
+            info.file.to_owned(),
             info.begin_line,
             info.begin_column,
             false, /* hit */
             info.must_hit,
-            info.id,
+            info.id.to_owned(),
             &no_details
         );
     }
@@ -69,42 +65,40 @@ impl TrackingInfo {
 }
 
 
-#[derive(PartialEq, Debug)]
-enum AssertType {
+#[derive(Copy, Clone, PartialEq, Debug, Serialize)]
+#[serde(rename_all(serialize = "lowercase"))]
+pub enum AssertType {
     Always,
     Sometimes,
     Reachability,
 }
 
-const DEFAULT_ASSERT_TYPE: AssertType = AssertType::Reachability;
-
-impl FromStr for AssertType {
-    type Err = ();
-    fn from_str(input: &str) -> Result<AssertType, Self::Err> {
-        match input {
-            "always"  => Ok(AssertType::Always),
-            "sometimes"  => Ok(AssertType::Sometimes),
-            "reachability"  => Ok(AssertType::Reachability),
-            _  => Err(()),
-        }
-    }
+#[derive(Serialize, Debug)]
+struct AntithesisLocationInfo<'a> {
+    class: &'a str,
+    function: &'a str,
+    file: &'a str,
+    begin_line: u32,
+    begin_column: u32,
 }
 
-impl fmt::Display for AssertType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let text = match self {
-            AssertType::Always => "always",
-            AssertType::Sometimes => "sometimes",
-            AssertType::Reachability => "reachability"
-        };
-        write!(f, "{text}")
-    }
+#[derive(Serialize, Debug)]
+struct AntithesisAssertInfo<'a> {
+    hit: bool,
+    must_hit: bool,
+    assert_type: AssertType,
+    display_type: &'a str,
+    message: &'a str,
+    condition: bool,
+    id: &'a str,
+    location: AntithesisLocationInfo<'a>,
+    details: &'a Value,
 }
 
 /// Internal representation for assertion catalog
 #[derive(Debug)]
 pub struct CatalogInfo {
-    pub assert_type: &'static str,
+    pub assert_type: AssertType,
     pub display_type: &'static str,
     pub condition: bool,
     pub message: &'static str,
@@ -119,7 +113,7 @@ pub struct CatalogInfo {
 
 #[derive(Debug)]
 struct AssertionInfo {
-    assert_type: String,
+    assert_type: AssertType,
     display_type: String,
     condition: bool,
     message: String,
@@ -137,47 +131,40 @@ struct AssertionInfo {
 impl AssertionInfo {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
-        assert_type: &str,
-        display_type: &str,
+        assert_type: AssertType,
+        display_type: String,
         condition: bool,
-        message: &str,
-        class: &str,
-        function: &str,
-        file: & str,
+        message: String,
+        class: String,
+        function: String,
+        file: String,
         begin_line: u32,
         begin_column: u32,
         hit: bool,
         must_hit: bool,
-        id: &str,
+        id: String,
         details: &Value) -> Self {
 
-        let derived_assert_type = match AssertType::from_str(assert_type) {
-            Ok(converted_assert_type) => converted_assert_type,
-            Err(_) => DEFAULT_ASSERT_TYPE
-        };
-
-        let assert_type_text = derived_assert_type.to_string();
-
         AssertionInfo{
-            assert_type: assert_type_text,
-            display_type: display_type.to_owned(),
+            assert_type,
+            display_type,
             condition,
-            message: message.to_owned(),
-            class: class.to_owned(),
-            function: function.to_owned(),
-            file: file.to_owned(),
+            message,
+            class,
+            function,
+            file,
             begin_line,
             begin_column,
             hit,
             must_hit,
-            id: id.to_owned(),
+            id,
             details: details.clone(),
         }
     }
 
 
-    // emit(tracker_entry, assertion) and determines if the assertion 
-    // should actually be emitted:
+    // AssertionInfo::track_entry() determines if the assertion should 
+    // actually be emitted:
     //
     // [X] If this is an assertion catalog
     // registration (assertion.hit == false) then it is emitted.
@@ -220,27 +207,28 @@ impl AssertionInfo {
     }
 
     fn emit(&self) {
-        let location_info = json!({
-            "class": self.class.as_str(),
-            "function": self.function.as_str(),
-            "file": self.file.as_str(),
-            "begin_line": self.begin_line,
-            "begin_column": self.begin_column,
-        });
-        let assertion_value = json!({
-            "antithesis_assert": json!({
-                "hit": self.hit,
-                "must_hit": self.must_hit,
-                "assert_type": self.assert_type.as_str(),
-                "display_type": self.display_type.as_str(),
-                "message": self.message.as_str(),
-                "condition": self.condition,
-                "id": self.id.as_str(),
-                "location": location_info,
-                "details": &self.details
-            })
-        });
-        internal::dispatch_output(&assertion_value)
+
+        let location_data = AntithesisLocationInfo{
+            class: self.class.as_str(),
+            function: self.function.as_str(),
+            file: self.file.as_str(),
+            begin_line: self.begin_line,
+            begin_column: self.begin_column,
+        };
+
+        let assert_data = AntithesisAssertInfo{
+            hit: self.hit,
+            must_hit: self.must_hit,
+            assert_type: self.assert_type,
+            display_type: self.display_type.as_str(),
+            message: self.message.as_str(),
+            condition: self.condition,
+            id: self.id.as_str(),
+            location: location_data,
+            details: &self.details,
+        };
+
+        internal::dispatch_output(&assert_data);
     }
 }
 
@@ -248,18 +236,18 @@ impl AssertionInfo {
 #[allow(clippy::too_many_arguments)]
 pub fn assert_raw(
         condition: bool,
-        message: &str,
+        message: String,
         details: &Value,
-        class: &str,
-        function: &str,
-        file: &str,
+        class: String,
+        function: String,
+        file: String,
         begin_line: u32,
         begin_column: u32,
         hit: bool,
         must_hit: bool,
-        assert_type: &str,
-        display_type: &str,
-        id: &str) {
+        assert_type: AssertType,
+        display_type: String,
+        id: String) {
 
     assert_impl( assert_type, display_type, condition, message, class, function, file, begin_line, begin_column, hit, must_hit, id, details)
 }
@@ -268,18 +256,18 @@ pub fn assert_raw(
 /// Regular users of the assert package should not call it.
 #[allow(clippy::too_many_arguments)]
 pub fn assert_impl(
-        assert_type: &str,
-        display_type: &str,
+        assert_type: AssertType, 
+        display_type: String,
         condition: bool,
-        message: &str,
-        class: &str,
-        function: &str,
-        file: &str,
+        message: String,
+        class: String,
+        function: String,
+        file: String,
         begin_line: u32,
         begin_column: u32,
         hit: bool,
         must_hit: bool,
-        id: &str,
+        id: String,
         details: &Value) {
 
     let assertion = AssertionInfo::new(assert_type, display_type, condition, message, class, function, file, begin_line, begin_column, hit, must_hit, id, details);
@@ -310,43 +298,12 @@ mod tests {
 
 
     //--------------------------------------------------------------------------------
-    // Tests for AssertType
-    //--------------------------------------------------------------------------------
-    #[test]
-    fn text_to_assert_type() {
-        let always_assert_type = AssertType::from_str("always");
-        assert_eq!(always_assert_type.unwrap(), AssertType::Always);
-
-        let sometimes_assert_type = AssertType::from_str("sometimes");
-        assert_eq!(sometimes_assert_type.unwrap(), AssertType::Sometimes);
-
-        let reachability_assert_type = AssertType::from_str("reachability");
-        assert_eq!(reachability_assert_type.unwrap(), AssertType::Reachability);
-
-        let fallback_assert_type = AssertType::from_str("xyz");
-        assert!(fallback_assert_type.is_err())
-    }
-
-    #[test]
-    fn assert_type_to_text() {
-        let always_text = AssertType::Always.to_string();
-        assert_eq!(always_text, "always");
-
-        let sometimes_text = AssertType::Sometimes.to_string();
-        assert_eq!(sometimes_text, "sometimes");
-
-        let reachability_text = AssertType::Reachability.to_string();
-        assert_eq!(reachability_text, "reachability");
-    }
-
-
-    //--------------------------------------------------------------------------------
     // Tests for AssertionInfo
     //--------------------------------------------------------------------------------
 
     #[test]
     fn new_assertion_info_always() {
-        let this_assert_type = "always";
+        let this_assert_type = AssertType::Always;
         let this_display_type = "Always";
         let this_condition = true;
         let this_message = "Always message";
@@ -365,36 +322,35 @@ mod tests {
 
         let ai = AssertionInfo::new(
             this_assert_type,
-            this_display_type,
+            this_display_type.to_owned(),
             this_condition,
-            this_message,
-            this_class,
-            this_function,
-            this_file,
+            this_message.to_owned(),
+            this_class.to_owned(),
+            this_function.to_owned(),
+            this_file.to_owned(),
             this_begin_line,
             this_begin_column,
             this_hit,
             this_must_hit,
-            this_id,
+            this_id.to_owned(),
             &this_details);
-        assert_eq!(ai.assert_type, this_assert_type);
-        assert_eq!(ai.display_type, this_display_type);
+        assert_eq!(ai.display_type.as_str(), this_display_type);
         assert_eq!(ai.condition, this_condition);
-        assert_eq!(ai.message, this_message);
-        assert_eq!(ai.class, this_class);
-        assert_eq!(ai.function, this_function);
-        assert_eq!(ai.file, this_file);
+        assert_eq!(ai.message.as_str(), this_message);
+        assert_eq!(ai.class.as_str(), this_class);
+        assert_eq!(ai.function.as_str(), this_function);
+        assert_eq!(ai.file.as_str(), this_file);
         assert_eq!(ai.begin_line, this_begin_line);
         assert_eq!(ai.begin_column, this_begin_column);
         assert_eq!(ai.hit, this_hit);
         assert_eq!(ai.must_hit, this_must_hit);
-        assert_eq!(ai.id, this_id);
+        assert_eq!(ai.id.as_str(), this_id);
         assert_eq!(ai.details, this_details);
     }
 
     #[test]
     fn new_assertion_info_sometimes() {
-        let this_assert_type = "sometimes";
+        let this_assert_type = AssertType::Sometimes;
         let this_display_type = "Sometimes";
         let this_condition = true;
         let this_message = "Sometimes message";
@@ -413,36 +369,35 @@ mod tests {
 
         let ai = AssertionInfo::new(
             this_assert_type,
-            this_display_type,
+            this_display_type.to_owned(),
             this_condition,
-            this_message,
-            this_class,
-            this_function,
-            this_file,
+            this_message.to_owned(),
+            this_class.to_owned(),
+            this_function.to_owned(),
+            this_file.to_owned(),
             this_begin_line,
             this_begin_column,
             this_hit,
             this_must_hit,
-            this_id,
+            this_id.to_owned(),
             &this_details);
-        assert_eq!(ai.assert_type, this_assert_type);
-        assert_eq!(ai.display_type, this_display_type);
+        assert_eq!(ai.display_type.as_str(), this_display_type);
         assert_eq!(ai.condition, this_condition);
-        assert_eq!(ai.message, this_message);
-        assert_eq!(ai.class, this_class);
-        assert_eq!(ai.function, this_function);
-        assert_eq!(ai.file, this_file);
+        assert_eq!(ai.message.as_str(), this_message);
+        assert_eq!(ai.class.as_str(), this_class);
+        assert_eq!(ai.function.as_str(), this_function);
+        assert_eq!(ai.file.as_str(), this_file);
         assert_eq!(ai.begin_line, this_begin_line);
         assert_eq!(ai.begin_column, this_begin_column);
         assert_eq!(ai.hit, this_hit);
         assert_eq!(ai.must_hit, this_must_hit);
-        assert_eq!(ai.id, this_id);
+        assert_eq!(ai.id.as_str(), this_id);
         assert_eq!(ai.details, this_details);
     }
 
     #[test]
     fn new_assertion_info_reachable() {
-        let this_assert_type = "reachability";
+        let this_assert_type = AssertType::Reachability;
         let this_display_type = "Reachable";
         let this_condition = true;
         let this_message = "Reachable message";
@@ -461,36 +416,35 @@ mod tests {
 
         let ai = AssertionInfo::new(
             this_assert_type,
-            this_display_type,
+            this_display_type.to_owned(),
             this_condition,
-            this_message,
-            this_class,
-            this_function,
-            this_file,
+            this_message.to_owned(),
+            this_class.to_owned(),
+            this_function.to_owned(),
+            this_file.to_owned(),
             this_begin_line,
             this_begin_column,
             this_hit,
             this_must_hit,
-            this_id,
+            this_id.to_owned(),
             &this_details);
-        assert_eq!(ai.assert_type, this_assert_type);
-        assert_eq!(ai.display_type, this_display_type);
+        assert_eq!(ai.display_type.as_str(), this_display_type);
         assert_eq!(ai.condition, this_condition);
-        assert_eq!(ai.message, this_message);
-        assert_eq!(ai.class, this_class);
-        assert_eq!(ai.function, this_function);
-        assert_eq!(ai.file, this_file);
+        assert_eq!(ai.message.as_str(), this_message);
+        assert_eq!(ai.class.as_str(), this_class);
+        assert_eq!(ai.function.as_str(), this_function);
+        assert_eq!(ai.file.as_str(), this_file);
         assert_eq!(ai.begin_line, this_begin_line);
         assert_eq!(ai.begin_column, this_begin_column);
         assert_eq!(ai.hit, this_hit);
         assert_eq!(ai.must_hit, this_must_hit);
-        assert_eq!(ai.id, this_id);
+        assert_eq!(ai.id.as_str(), this_id);
         assert_eq!(ai.details, this_details);
     }
 
     #[test]
     fn assert_impl_pass() {
-        let this_assert_type = "always";
+        let this_assert_type = AssertType::Always;
         let this_display_type = "Always";
         let this_condition = true;
         let this_message = "Always message 2";
@@ -511,17 +465,17 @@ mod tests {
 
         assert_impl(
             this_assert_type,
-            this_display_type,
+            this_display_type.to_owned(),
             this_condition,
-            this_message,
-            this_class,
-            this_function,
-            this_file,
+            this_message.to_owned(),
+            this_class.to_owned(),
+            this_function.to_owned(),
+            this_file.to_owned(),
             this_begin_line,
             this_begin_column,
             this_hit,
             this_must_hit,
-            this_id,
+            this_id.to_owned(),
             &this_details);
 
         let after_tracker = tracking_info_for_key(this_id);
@@ -538,7 +492,7 @@ mod tests {
 
     #[test]
     fn assert_impl_fail() {
-        let this_assert_type = "always";
+        let this_assert_type = AssertType::Always;
         let this_display_type = "Always";
         let this_condition = false;
         let this_message = "Always message 3";
@@ -559,17 +513,17 @@ mod tests {
 
         assert_impl(
             this_assert_type,
-            this_display_type,
+            this_display_type.to_owned(),
             this_condition,
-            this_message,
-            this_class,
-            this_function,
-            this_file,
+            this_message.to_owned(),
+            this_class.to_owned(),
+            this_function.to_owned(),
+            this_file.to_owned(),
             this_begin_line,
             this_begin_column,
             this_hit,
             this_must_hit,
-            this_id,
+            this_id.to_owned(),
             &this_details);
 
         let after_tracker = tracking_info_for_key(this_id);
@@ -581,57 +535,6 @@ mod tests {
             assert_eq!(before_tracker.fail_count + 1, after_tracker.fail_count);
             assert_eq!(before_tracker.pass_count, after_tracker.pass_count);
         };
-    }
-
-    #[test]
-    fn new_assertion_info_invalid_assert_type() {
-        let this_assert_type = "possibly";
-        let this_display_type = "Possibly";
-        let this_condition = true;
-        let this_message = "Possibly message";
-        let this_class = "binary::possibly";
-        let this_function = "binary::possibly::possibly_function";
-        let this_file = "/home/user/binary/src/possibly_binary.rs";
-        let this_begin_line = 13;
-        let this_begin_column = 8;
-        let this_hit = true;
-        let this_must_hit = true;
-        let this_id = "ID Possibly message";
-        let this_details = json!({
-            "color": "possibly red",
-            "extent": 21,
-        });
-
-        let ai = AssertionInfo::new(
-            this_assert_type,
-            this_display_type,
-            this_condition,
-            this_message,
-            this_class,
-            this_function,
-            this_file,
-            this_begin_line,
-            this_begin_column,
-            this_hit,
-            this_must_hit,
-            this_id,
-            &this_details);
-
-        let fallback_assert_type = "reachability";
-
-        assert_eq!(ai.assert_type, fallback_assert_type);
-        assert_eq!(ai.display_type, this_display_type);
-        assert_eq!(ai.condition, this_condition);
-        assert_eq!(ai.message, this_message);
-        assert_eq!(ai.class, this_class);
-        assert_eq!(ai.function, this_function);
-        assert_eq!(ai.file, this_file);
-        assert_eq!(ai.begin_line, this_begin_line);
-        assert_eq!(ai.begin_column, this_begin_column);
-        assert_eq!(ai.hit, this_hit);
-        assert_eq!(ai.must_hit, this_must_hit);
-        assert_eq!(ai.id, this_id);
-        assert_eq!(ai.details, this_details);
     }
 
     fn tracking_info_for_key(key: &str) -> TrackingInfo {
