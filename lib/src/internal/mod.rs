@@ -3,9 +3,11 @@ use rustc_version_runtime::version;
 use serde::Serialize;
 use std::io::{Error};
 use local_handler::LocalHandler;
-use voidstar_handler::{VoidstarHandler};
+use voidstar_handler::VoidstarHandler;
+use noop_handler::NoOpHandler;
 
 mod local_handler;
+mod noop_handler;
 mod voidstar_handler;
 
 #[derive(Serialize, Debug)]
@@ -35,7 +37,11 @@ const SDK_VERSION: &str = "0.1.2";
 pub(crate) static LIB_HANDLER: Lazy<Box<dyn LibHandler + Sync + Send>> = Lazy::new(|| {
     let handler: Box<dyn LibHandler + Sync + Send> = match VoidstarHandler::try_load() {
         Ok(handler) => Box::new(handler),
-        Err(_) => Box::new(LocalHandler::new()),
+        Err(_) => match LocalHandler::new() {
+            Some(h) => Box::new(h),
+            None => Box::new(NoOpHandler::new())
+        }
+
     };
     let s = serde_json::to_string(&sdk_info()).unwrap_or("{}".to_owned());
     let _ = handler.output(s.as_str());
