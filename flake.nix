@@ -65,13 +65,18 @@
     };
 
     devShells.default = pkgs: {
+      inputsFrom = with pkgs; [ antithesis-sdk-rust.workspace ];
       packages = with pkgs; [ rust-analyzer cargo-msrv ];
     };
 
-    # TODO: Check minimal versions of dependency, and feature flags.
-    # TODO: Do we what formatters?
+    # TODO: Check combinations of feature flags & semver check.
     checks = { antithesis-sdk-rust, ... }: {
       inherit (antithesis-sdk-rust) workspaceMSRV clippy test;
+    };
+
+    formatters = pkgs: {
+      "*.rs" = "${pkgs.rustfmt}/bin/rustfmt";
+      "*.nix" = "${pkgs.nixpkgs-fmt}/bin/nixpkgs-fmt";
     };
 
     flakelight.builtinFormatters = false;
