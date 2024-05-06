@@ -55,7 +55,7 @@ pub(crate) trait LibHandler {
 }
 
 // Made public so it can be invoked from the antithesis_sdk_rust::random module
-pub fn dispatch_random() -> u64 {
+pub (crate) fn dispatch_random() -> u64 {
     LIB_HANDLER.random()
 }
 
@@ -75,7 +75,7 @@ pub fn dispatch_random() -> u64 {
 //
 // Made public so it can be invoked from the antithesis_sdk_rust::lifecycle 
 // and antithesis_sdk_rust::assert module
-pub fn dispatch_output<T: Serialize+?Sized>(json_data: &T) {
+pub fn dispatch_output<T: Serialize + ?Sized>(json_data: &T) {
     let s = serde_json::to_string(json_data).unwrap_or("{}".to_owned());
     let _ = LIB_HANDLER.output(s.as_str());
 }

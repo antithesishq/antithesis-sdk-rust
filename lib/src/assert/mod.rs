@@ -74,25 +74,12 @@ pub enum AssertType {
 }
 
 #[derive(Serialize, Debug)]
-struct AntithesisLocationInfo<'a> {
-    class: &'a str,
-    function: &'a str,
-    file: &'a str,
+struct AntithesisLocationInfo {
+    class: String,
+    function: String,
+    file: String,
     begin_line: u32,
     begin_column: u32,
-}
-
-#[derive(Serialize, Debug)]
-struct AntithesisAssertInfo<'a> {
-    hit: bool,
-    must_hit: bool,
-    assert_type: AssertType,
-    display_type: &'a str,
-    message: &'a str,
-    condition: bool,
-    id: &'a str,
-    location: AntithesisLocationInfo<'a>,
-    details: &'a Value,
 }
 
 /// Internal representation for assertion catalog
@@ -111,17 +98,13 @@ pub struct CatalogInfo {
     pub id: &'static str,
 }
 
-#[derive(Debug)]
+#[derive(Serialize, Debug)]
 struct AssertionInfo {
     assert_type: AssertType,
     display_type: String,
     condition: bool,
     message: String,
-    class: String,
-    function: String,
-    file: String,
-    begin_line: u32,
-    begin_column: u32,
+    location: AntithesisLocationInfo,
     hit: bool,
     must_hit: bool,
     id: String,
@@ -145,16 +128,20 @@ impl AssertionInfo {
         id: String,
         details: &Value) -> Self {
 
-        AssertionInfo{
-            assert_type,
-            display_type,
-            condition,
-            message,
+        let location = AntithesisLocationInfo {
             class,
             function,
             file,
             begin_line,
             begin_column,
+        };
+
+        AssertionInfo{
+            assert_type,
+            display_type,
+            condition,
+            message,
+            location,
             hit,
             must_hit,
             id,
@@ -207,28 +194,7 @@ impl AssertionInfo {
     }
 
     fn emit(&self) {
-
-        let location_data = AntithesisLocationInfo{
-            class: self.class.as_str(),
-            function: self.function.as_str(),
-            file: self.file.as_str(),
-            begin_line: self.begin_line,
-            begin_column: self.begin_column,
-        };
-
-        let assert_data = AntithesisAssertInfo{
-            hit: self.hit,
-            must_hit: self.must_hit,
-            assert_type: self.assert_type,
-            display_type: self.display_type.as_str(),
-            message: self.message.as_str(),
-            condition: self.condition,
-            id: self.id.as_str(),
-            location: location_data,
-            details: &self.details,
-        };
-
-        internal::dispatch_output(&assert_data);
+        internal::dispatch_output(&self);
     }
 }
 
@@ -337,11 +303,11 @@ mod tests {
         assert_eq!(ai.display_type.as_str(), this_display_type);
         assert_eq!(ai.condition, this_condition);
         assert_eq!(ai.message.as_str(), this_message);
-        assert_eq!(ai.class.as_str(), this_class);
-        assert_eq!(ai.function.as_str(), this_function);
-        assert_eq!(ai.file.as_str(), this_file);
-        assert_eq!(ai.begin_line, this_begin_line);
-        assert_eq!(ai.begin_column, this_begin_column);
+        assert_eq!(ai.location.class.as_str(), this_class);
+        assert_eq!(ai.location.function.as_str(), this_function);
+        assert_eq!(ai.location.file.as_str(), this_file);
+        assert_eq!(ai.location.begin_line, this_begin_line);
+        assert_eq!(ai.location.begin_column, this_begin_column);
         assert_eq!(ai.hit, this_hit);
         assert_eq!(ai.must_hit, this_must_hit);
         assert_eq!(ai.id.as_str(), this_id);
@@ -384,11 +350,11 @@ mod tests {
         assert_eq!(ai.display_type.as_str(), this_display_type);
         assert_eq!(ai.condition, this_condition);
         assert_eq!(ai.message.as_str(), this_message);
-        assert_eq!(ai.class.as_str(), this_class);
-        assert_eq!(ai.function.as_str(), this_function);
-        assert_eq!(ai.file.as_str(), this_file);
-        assert_eq!(ai.begin_line, this_begin_line);
-        assert_eq!(ai.begin_column, this_begin_column);
+        assert_eq!(ai.location.class.as_str(), this_class);
+        assert_eq!(ai.location.function.as_str(), this_function);
+        assert_eq!(ai.location.file.as_str(), this_file);
+        assert_eq!(ai.location.begin_line, this_begin_line);
+        assert_eq!(ai.location.begin_column, this_begin_column);
         assert_eq!(ai.hit, this_hit);
         assert_eq!(ai.must_hit, this_must_hit);
         assert_eq!(ai.id.as_str(), this_id);
@@ -431,11 +397,11 @@ mod tests {
         assert_eq!(ai.display_type.as_str(), this_display_type);
         assert_eq!(ai.condition, this_condition);
         assert_eq!(ai.message.as_str(), this_message);
-        assert_eq!(ai.class.as_str(), this_class);
-        assert_eq!(ai.function.as_str(), this_function);
-        assert_eq!(ai.file.as_str(), this_file);
-        assert_eq!(ai.begin_line, this_begin_line);
-        assert_eq!(ai.begin_column, this_begin_column);
+        assert_eq!(ai.location.class.as_str(), this_class);
+        assert_eq!(ai.location.function.as_str(), this_function);
+        assert_eq!(ai.location.file.as_str(), this_file);
+        assert_eq!(ai.location.begin_line, this_begin_line);
+        assert_eq!(ai.location.begin_column, this_begin_column);
         assert_eq!(ai.hit, this_hit);
         assert_eq!(ai.must_hit, this_must_hit);
         assert_eq!(ai.id.as_str(), this_id);
