@@ -2,7 +2,19 @@
 /// environment that particular test phases or milestones have been reached.
 
 use serde_json::{json, Value};
+use serde::Serialize;
 use crate::internal;
+
+#[derive(Serialize, Debug)]
+struct AntithesisSetupData<'a, 'b> {
+    status: &'a str,
+    details: &'b Value,
+}
+
+#[derive(Serialize, Debug)]
+struct SetupCompleteData<'a> {
+    antithesis_setup: AntithesisSetupData<'a, 'a>,
+}
 
 /// Call this function when your system and workload are fully initialized. 
 /// After this function is called, the Antithesis environment will take a 
@@ -12,13 +24,17 @@ use crate::internal;
 /// have no effect. Antithesis will treat the first time any process called 
 /// this function as the moment that the setup was completed.
 pub fn setup_complete(details: &Value) {
-    let setup_value = json!({
-        "antithesis_setup": json!({
-            "status": "complete",
-            "details": details
-        })
-    });
-    internal::dispatch_output(&setup_value)
+    let status = "complete";
+    let antithesis_setup = AntithesisSetupData::<'_, '_>{
+        status,
+        details,
+    };
+
+    let setup_complete_data = SetupCompleteData{
+        antithesis_setup
+    };
+
+    internal::dispatch_output(&setup_complete_data)
 }
 
 /// Causes an event with the name and details provided,
@@ -43,7 +59,7 @@ mod tests {
 
     #[test]
     fn setup_complete_without_details() {
-        eprintln!("setrup_complete");
+        eprintln!("setup_complete");
         let details: Value = json!({});
         setup_complete(&details);
         assert!(true)
