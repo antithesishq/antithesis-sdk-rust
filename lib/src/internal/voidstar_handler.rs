@@ -1,8 +1,8 @@
 use libc::{c_char, size_t};
-use libloading::{Library};
-use std::io::{Error};
+use libloading::Library;
+use std::io::Error;
 
-use crate::internal::{LibHandler};
+use crate::internal::LibHandler;
 
 const LIB_NAME: &str = "/usr/lib/libvoidstar.so";
 
@@ -32,7 +32,12 @@ impl VoidstarHandler {
             let fuzz_json_data = *lib.get(b"fuzz_json_data\0")?;
             let fuzz_get_random = *lib.get(b"fuzz_get_random\0")?;
             let fuzz_flush = *lib.get(b"fuzz_flush\0")?;
-            Ok(VoidstarHandler { _lib: lib, fuzz_json_data, fuzz_get_random, fuzz_flush })
+            Ok(VoidstarHandler {
+                _lib: lib,
+                fuzz_json_data,
+                fuzz_get_random,
+                fuzz_flush,
+            })
         }
     }
 }
@@ -52,4 +57,3 @@ impl LibHandler for VoidstarHandler {
         (self.fuzz_get_random)()
     }
 }
-

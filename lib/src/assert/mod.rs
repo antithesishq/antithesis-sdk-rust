@@ -1,26 +1,25 @@
-use once_cell::sync::Lazy;
-use serde_json::{Value, json};
-use serde::Serialize;
-use std::collections::HashMap;
-use std::sync::{Mutex};
 use crate::internal;
 use linkme::distributed_slice;
+use once_cell::sync::Lazy;
+use serde::Serialize;
+use serde_json::{json, Value};
+use std::collections::HashMap;
+use std::sync::Mutex;
 
 mod macros;
-
 
 /// Catalog of all antithesis assertions provided
 #[distributed_slice]
 pub static ANTITHESIS_CATALOG: [CatalogInfo];
 
-// Only need an ASSET_TRACKER if there are actually assertions 'hit' 
+// Only need an ASSET_TRACKER if there are actually assertions 'hit'
 // (i.e. encountered and invoked at runtime).
 //
 // Typically runtime assertions use the macros always!(), sometimes!(), etc.
 // or, a client is using the 'raw' interface 'assert_raw' at runtime.
 //
-pub(crate) static ASSERT_TRACKER: Lazy<Mutex<HashMap<String, TrackingInfo>>> = 
-   Lazy::new(|| Mutex::new(HashMap::new()));
+pub(crate) static ASSERT_TRACKER: Lazy<Mutex<HashMap<String, TrackingInfo>>> =
+    Lazy::new(|| Mutex::new(HashMap::new()));
 
 pub(crate) static INIT_CATALOG: Lazy<()> = Lazy::new(|| {
     let no_details: Value = json!({});
@@ -39,7 +38,7 @@ pub(crate) static INIT_CATALOG: Lazy<()> = Lazy::new(|| {
             false, /* hit */
             info.must_hit,
             info.id.to_owned(),
-            &no_details
+            &no_details,
         );
     }
 });
@@ -57,13 +56,12 @@ impl Default for TrackingInfo {
 
 impl TrackingInfo {
     pub fn new() -> Self {
-        TrackingInfo{
+        TrackingInfo {
             pass_count: 0,
             fail_count: 0,
         }
     }
 }
-
 
 #[derive(Copy, Clone, PartialEq, Debug, Serialize)]
 #[serde(rename_all(serialize = "lowercase"))]
@@ -126,8 +124,8 @@ impl AssertionInfo {
         hit: bool,
         must_hit: bool,
         id: String,
-        details: &Value) -> Self {
-
+        details: &Value,
+    ) -> Self {
         let location = AntithesisLocationInfo {
             class,
             function,
@@ -136,7 +134,7 @@ impl AssertionInfo {
             begin_column,
         };
 
-        AssertionInfo{
+        AssertionInfo {
             assert_type,
             display_type,
             condition,
@@ -149,8 +147,7 @@ impl AssertionInfo {
         }
     }
 
-
-    // AssertionInfo::track_entry() determines if the assertion should 
+    // AssertionInfo::track_entry() determines if the assertion should
     // actually be emitted:
     //
     // [X] If this is an assertion catalog
@@ -160,18 +157,18 @@ impl AssertionInfo {
     // otherwise increment the tracker_entry.fail_count.
     //
     // [X] if `condition` is true and tracker_entry_pass_count == 1 then
-    // actually emit the assertion.  
+    // actually emit the assertion.
     //
     // [X] if `condition` is false and tracker_entry_fail_count == 1 then
     // actually emit the assertion.
 
-    // Verify that the TrackingInfo for self in 
+    // Verify that the TrackingInfo for self in
     // ASSERT_TRACKER has been updated according to self.condition
     fn track_entry(&self) {
         // Requirement: Catalog entries must always will emit()
         if !self.hit {
             self.emit();
-            return
+            return;
         }
 
         // Establish TrackingInfo for this trackingKey when needed
@@ -198,52 +195,78 @@ impl AssertionInfo {
     }
 }
 
-
 #[allow(clippy::too_many_arguments)]
 pub fn assert_raw(
-        condition: bool,
-        message: String,
-        details: &Value,
-        class: String,
-        function: String,
-        file: String,
-        begin_line: u32,
-        begin_column: u32,
-        hit: bool,
-        must_hit: bool,
-        assert_type: AssertType,
-        display_type: String,
-        id: String) {
-
-    assert_impl( assert_type, display_type, condition, message, class, function, file, begin_line, begin_column, hit, must_hit, id, details)
+    condition: bool,
+    message: String,
+    details: &Value,
+    class: String,
+    function: String,
+    file: String,
+    begin_line: u32,
+    begin_column: u32,
+    hit: bool,
+    must_hit: bool,
+    assert_type: AssertType,
+    display_type: String,
+    id: String,
+) {
+    assert_impl(
+        assert_type,
+        display_type,
+        condition,
+        message,
+        class,
+        function,
+        file,
+        begin_line,
+        begin_column,
+        hit,
+        must_hit,
+        id,
+        details,
+    )
 }
 
-/// This is a low-level method designed to be used by third-party frameworks. 
+/// This is a low-level method designed to be used by third-party frameworks.
 /// Regular users of the assert package should not call it.
 #[allow(clippy::too_many_arguments)]
 pub fn assert_impl(
-        assert_type: AssertType, 
-        display_type: String,
-        condition: bool,
-        message: String,
-        class: String,
-        function: String,
-        file: String,
-        begin_line: u32,
-        begin_column: u32,
-        hit: bool,
-        must_hit: bool,
-        id: String,
-        details: &Value) {
-
-    let assertion = AssertionInfo::new(assert_type, display_type, condition, message, class, function, file, begin_line, begin_column, hit, must_hit, id, details);
+    assert_type: AssertType,
+    display_type: String,
+    condition: bool,
+    message: String,
+    class: String,
+    function: String,
+    file: String,
+    begin_line: u32,
+    begin_column: u32,
+    hit: bool,
+    must_hit: bool,
+    id: String,
+    details: &Value,
+) {
+    let assertion = AssertionInfo::new(
+        assert_type,
+        display_type,
+        condition,
+        message,
+        class,
+        function,
+        file,
+        begin_line,
+        begin_column,
+        hit,
+        must_hit,
+        id,
+        details,
+    );
     let _ = &assertion.track_entry();
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
 
     //--------------------------------------------------------------------------------
     // Tests for TrackingInfo
@@ -261,7 +284,6 @@ mod tests {
         assert_eq!(ti.pass_count, 0);
         assert_eq!(ti.fail_count, 0);
     }
-
 
     //--------------------------------------------------------------------------------
     // Tests for AssertionInfo
@@ -299,7 +321,8 @@ mod tests {
             this_hit,
             this_must_hit,
             this_id.to_owned(),
-            &this_details);
+            &this_details,
+        );
         assert_eq!(ai.display_type.as_str(), this_display_type);
         assert_eq!(ai.condition, this_condition);
         assert_eq!(ai.message.as_str(), this_message);
@@ -346,7 +369,8 @@ mod tests {
             this_hit,
             this_must_hit,
             this_id.to_owned(),
-            &this_details);
+            &this_details,
+        );
         assert_eq!(ai.display_type.as_str(), this_display_type);
         assert_eq!(ai.condition, this_condition);
         assert_eq!(ai.message.as_str(), this_message);
@@ -393,7 +417,8 @@ mod tests {
             this_hit,
             this_must_hit,
             this_id.to_owned(),
-            &this_details);
+            &this_details,
+        );
         assert_eq!(ai.display_type.as_str(), this_display_type);
         assert_eq!(ai.condition, this_condition);
         assert_eq!(ai.message.as_str(), this_message);
@@ -442,7 +467,8 @@ mod tests {
             this_hit,
             this_must_hit,
             this_id.to_owned(),
-            &this_details);
+            &this_details,
+        );
 
         let after_tracker = tracking_info_for_key(this_id);
 
@@ -454,7 +480,6 @@ mod tests {
             assert_eq!(before_tracker.pass_count, after_tracker.pass_count);
         };
     }
-
 
     #[test]
     fn assert_impl_fail() {
@@ -490,7 +515,8 @@ mod tests {
             this_hit,
             this_must_hit,
             this_id.to_owned(),
-            &this_details);
+            &this_details,
+        );
 
         let after_tracker = tracking_info_for_key(this_id);
 
@@ -504,7 +530,6 @@ mod tests {
     }
 
     fn tracking_info_for_key(key: &str) -> TrackingInfo {
-
         // Establish TrackingInfo for this trackingKey when needed
         let mut tracking_data = TrackingInfo::new();
 

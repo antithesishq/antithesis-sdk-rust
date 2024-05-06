@@ -1,19 +1,18 @@
 use crate::internal;
 
-/// Returns a uint64 value chosen by Antithesis. You should not 
-/// store this value or use it to seed a PRNG, but should use it 
+/// Returns a uint64 value chosen by Antithesis. You should not
+/// store this value or use it to seed a PRNG, but should use it
 /// immediately.
 pub fn get_random() -> u64 {
     internal::dispatch_random()
 }
 
-
-/// Returns a randomly chosen item from a list of options. You 
+/// Returns a randomly chosen item from a list of options. You
 /// should not store this value, but should use it immediately.
 ///
-/// This function is not purely for convenience. Signaling to 
-/// the Antithesis platform that you intend to use a random value 
-/// in a structured way enables it to provide more interesting 
+/// This function is not purely for convenience. Signaling to
+/// the Antithesis platform that you intend to use a random value
+/// in a structured way enables it to provide more interesting
 /// choices over time.
 pub fn random_choice<T>(slice: &[T]) -> Option<&T> {
     match slice {
@@ -26,11 +25,10 @@ pub fn random_choice<T>(slice: &[T]) -> Option<&T> {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
-    use std::collections::{HashMap, HashSet};
     use super::*;
+    use std::collections::{HashMap, HashSet};
 
     #[test]
     fn random_choice_no_choices() {
@@ -46,10 +44,8 @@ mod tests {
         assert_eq!(Some(&"ABc"), random_choice(&array))
     }
 
-
     #[test]
     fn random_choice_few_choices() {
-        
         // For each map key, the value is the count of the number of
         // randiom_choice responses received matching that key
         let mut counted_items: HashMap<&str, i64> = HashMap::new();

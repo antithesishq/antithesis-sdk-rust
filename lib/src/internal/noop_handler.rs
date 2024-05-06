@@ -1,11 +1,11 @@
-use crate::internal::{LibHandler};
+use crate::internal::LibHandler;
 use std::io::Error;
 
 pub struct NoOpHandler {}
 
 impl NoOpHandler {
     pub fn new() -> Self {
-        NoOpHandler{}
+        NoOpHandler {}
     }
 }
 
