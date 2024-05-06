@@ -1,6 +1,5 @@
 use libc::{c_char, size_t};
 use libloading::{Library};
-use serde_json::{Value};
 use std::io::{Error};
 
 use crate::internal::{LibHandler};
@@ -39,12 +38,11 @@ impl VoidstarHandler {
 }
 
 impl LibHandler for VoidstarHandler {
-    fn output(&self, value: &Value) -> Result<(), Error> {
-        let payload = value.to_string();
+    fn output(&self, value: &str) -> Result<(), Error> {
         // SAFETY: The data pointer and length passed into `fuzz_json_data` points to valid memory
         // that we just initialized above.
         unsafe {
-            (self.fuzz_json_data)(payload.as_bytes().as_ptr() as *const c_char, payload.len());
+            (self.fuzz_json_data)(value.as_bytes().as_ptr() as *const c_char, value.len());
             (self.fuzz_flush)();
         }
         Ok(())

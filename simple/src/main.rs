@@ -43,6 +43,8 @@ fn lifecycle_demo() {
         ]
     });
 
+    let tiger: Value = json!(2457);
+    lifecycle::setup_complete(&tiger);
     lifecycle::setup_complete(&bird_value);
     lifecycle::setup_complete(&cat_value);
 
