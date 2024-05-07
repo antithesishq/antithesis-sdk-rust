@@ -1,7 +1,8 @@
+//! The lifecycle module contains functions which inform the Antithesis
+//! environment that particular test phases or milestones have been reached.
+
 use crate::internal;
 use serde::Serialize;
-/// The lifecycle module contains functions which inform the Antithesis
-/// environment that particular test phases or milestones have been reached.
 use serde_json::{json, Value};
 
 #[derive(Serialize, Debug)]
