@@ -79,9 +79,8 @@ macro_rules! assert_helper {
     }};
 }
 
-/// Assert that condition is true every time this function is called, AND that it is
-/// called at least once. This test property will be viewable in the "Antithesis SDK: Always"
-/// group of your triage report.
+/// Assert that condition is true every time this function is called, **and** that it is 
+/// called at least once. The corresponding test property will be viewable in the Antithesis SDK: Always group of your triage report.
 #[macro_export]
 macro_rules! assert_always {
     ($condition:expr, $message:literal, $details:expr) => {
@@ -96,10 +95,8 @@ macro_rules! assert_always {
     };
 }
 
-/// Assert that condition is true every time this function is called. Unlike the Always
-/// function, the test property spawned by AlwaysOrUnreachable will not be marked as
-/// failing if the function is never invoked. This test property will be viewable in
-/// the "Antithesis SDK: Always" group of your triage report.
+/// Assert that condition is true every time this function is called. The corresponding test property will pass if the assertion is never encountered (unlike Always assertion types). 
+/// This test property will be viewable in the “Antithesis SDK: Always” group of your triage report.
 #[macro_export]
 macro_rules! assert_always_or_unreachable {
     ($condition:expr, $message:literal, $details:expr) => {
@@ -114,10 +111,9 @@ macro_rules! assert_always_or_unreachable {
     };
 }
 
-/// Assert that condition is true at least one time that this function was called.
-/// The test property spawned by Sometimes will be marked as failing if this function
-/// is never called, or if condition is false every time that it is called. This
-/// test property will be viewable in the "Antithesis SDK: Sometimes" group.
+/// Assert that condition is true at least one time that this function was called. 
+/// (If the assertion is never encountered, the test property will therefore fail.) 
+/// This test property will be viewable in the “Antithesis SDK: Sometimes” group.
 #[macro_export]
 macro_rules! assert_sometimes {
     ($condition:expr, $message:literal, $details:expr) => {
@@ -132,9 +128,9 @@ macro_rules! assert_sometimes {
     };
 }
 
-/// Assert that a line of code is reached at least once. The test property spawned by
-/// Reachable will be marked as failing if this function is never called. This test
-/// property will be viewable in the "Antithesis SDK: Reachablity assertions" group.
+/// Assert that a line of code is reached at least once. 
+/// The corresponding test property will pass if this macro is ever called. (If it is never called the test property will therefore fail.) 
+/// This test property will be viewable in the “Antithesis SDK: Reachablity assertions” group.
 #[macro_export]
 macro_rules! assert_reachable {
     ($message:literal, $details:expr) => {
@@ -149,9 +145,10 @@ macro_rules! assert_reachable {
     };
 }
 
-/// Assert that a line of code is never reached. The test property spawned by Unreachable
-/// will be marked as failing if this function is ever called. This test property will
-/// be viewable in the "Antithesis SDK: Reachablity assertions" group.
+/// Assert that a line of code is never reached. 
+/// The corresponding test property will fail if this macro is ever called. 
+/// (If it is never called the test property will therefore pass.) 
+/// This test property will be viewable in the “Antithesis SDK: Reachablity assertions” group.
 #[macro_export]
 macro_rules! assert_unreachable {
     ($message:literal, $details:expr) => {
