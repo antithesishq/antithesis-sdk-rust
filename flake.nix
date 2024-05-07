@@ -76,10 +76,11 @@
       inherit (antithesis-sdk-rust) workspaceMSRV clippy test;
     };
 
-    formatters = pkgs: {
-      "*.rs" = "${pkgs.rustfmt}/bin/rustfmt";
-      "*.nix" = "${pkgs.nixpkgs-fmt}/bin/nixpkgs-fmt";
-    };
+    # TODO: Decide whether we want auto formatting.
+    # formatters = pkgs: {
+    #   "*.rs" = "${pkgs.rustfmt}/bin/rustfmt";
+    #   "*.nix" = "${pkgs.nixpkgs-fmt}/bin/nixpkgs-fmt";
+    # };
 
     flakelight.builtinFormatters = false;
   };
