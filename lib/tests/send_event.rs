@@ -1,9 +1,8 @@
-#[cfg(test)]
-use serde_json::{json};
-use antithesis_sdk_rust::{lifecycle};
-mod common;
+use antithesis_sdk_rust::lifecycle;
+use serde_json::json;
 
-use common::{SDKInput};
+mod common;
+use common::SDKInput;
 
 const LOCAL_OUTPUT: &str = "ANTITHESIS_SDK_LOCAL_OUTPUT";
 
@@ -15,7 +14,6 @@ const LOCAL_OUTPUT: &str = "ANTITHESIS_SDK_LOCAL_OUTPUT";
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 #[test]
 fn send_event() {
-
     let output_file = "/tmp/antithesis-send-event.json";
     let prev_v = common::env::set_var(LOCAL_OUTPUT, output_file);
     let details = json!({
@@ -30,19 +28,18 @@ fn send_event() {
     match common::read_jsonl_tags(output_file) {
         Ok(x) => {
             for obj in x.iter() {
-                match obj {
-                    SDKInput::SendEvent{event_name, details} => {
-                        assert_eq!(event_name, "logging");
-                        assert_eq!(&details["x"], 100);
-                        assert_eq!(&details["tag"], "last value");
-                    },
-                    _ => ()
+                if let SDKInput::SendEvent {
+                    event_name,
+                    details,
+                } = obj
+                {
+                    assert_eq!(event_name, "logging");
+                    assert_eq!(&details["x"], 100);
+                    assert_eq!(&details["tag"], "last value");
                 }
             }
-        },
-        Err(e) => println!("{}", e)
+        }
+        Err(e) => println!("{}", e),
     }
     common::env::restore_var(LOCAL_OUTPUT, prev_v);
 }
-
-

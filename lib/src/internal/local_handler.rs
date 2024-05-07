@@ -1,14 +1,14 @@
 use std::env;
 use std::fs::File;
-use std::io::{Write, Error};
+use std::io::{Error, Write};
 
 // use crate::internal::noop_handler::NoOpHandler;
-use crate::internal::{LibHandler};
+use crate::internal::LibHandler;
 
 const LOCAL_OUTPUT: &str = "ANTITHESIS_SDK_LOCAL_OUTPUT";
 
 pub struct LocalHandler {
-    writer: File
+    writer: File,
 }
 
 impl LocalHandler {
@@ -17,22 +17,25 @@ impl LocalHandler {
 
         let create_result = File::create(&filename);
         if let Ok(writer) = create_result {
-            Some(LocalHandler{ writer })
+            Some(LocalHandler { writer })
         } else {
-            eprintln!("Unable to write to '{}' - {}", filename.as_str(), create_result.unwrap_err());
+            eprintln!(
+                "Unable to write to '{}' - {}",
+                filename.as_str(),
+                create_result.unwrap_err()
+            );
             None
         }
     }
 }
 
 impl LibHandler for LocalHandler {
-
     fn output(&self, value: &str) -> Result<(), Error> {
         // The compact Display impl (selected using `{}`) of `serde_json::Value` contains no newlines,
         // hence we are outputing valid JSONL format here.
         // Using the `{:#}` format specifier may results in extra newlines and indentation.
         // See https://docs.rs/serde_json/latest/serde_json/enum.Value.html#impl-Display-for-Value.
-        let mut writer_mut = & self.writer;
+        let mut writer_mut = &self.writer;
         writeln!(writer_mut, "{}", value)?;
         writer_mut.flush()?;
         Ok(())

@@ -13,21 +13,22 @@
 ///
 /// Each macro/function in this module takes a parameter called message, which is 
 /// a human readable identifier used to aggregate assertions. 
-/// Antithesis generates one test property per unique message and this test property will be named "<message>" in the [triage report](https://antithesis.com/docs/reports/triage.html).
+/// Antithesis generates one test property per unique message and this test property will be named "message" in the [triage report](https://antithesis.com/docs/reports/triage.html).
 ///
-/// Each macro/function also takes a parameter called details, which is a key-value map of optional additional information provided by the user to add context for assertion failures. The information that is logged will appear in the logs section of a [triage report](https://antithesis.com/docs/reports/triage.html). Normally the values passed to details are evaluated at runtime.
+/// Each macro/function also takes a parameter called details, which is a key-value map of optional additional information provided by the user to add context for assertion failures. 
+/// The information that is logged will appear in the logs section of a [triage report](https://antithesis.com/docs/reports/triage.html). 
+/// Normally the values passed to details are evaluated at runtime.
 pub mod assert;
 
 // External crates used in assertion macros
 #[doc(hidden)]
-pub use once_cell;
-#[doc(hidden)]
 pub use linkme;
+#[doc(hidden)]
+pub use once_cell;
 
-/// The lifecycle module contains functions which inform the Antithesis 
+/// The lifecycle module contains functions which inform the Antithesis
 /// environment that particular test phases or milestones have been reached.
 pub mod lifecycle;
-
 
 /// The random module provides functions that request both structured and unstructured randomness from the Antithesis environment.
 /// 

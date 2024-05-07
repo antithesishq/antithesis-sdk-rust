@@ -1,9 +1,9 @@
-/// The lifecycle module contains functions which inform the Antithesis 
-/// environment that particular test phases or milestones have been reached.
+//! The lifecycle module contains functions which inform the Antithesis
+//! environment that particular test phases or milestones have been reached.
 
-use serde_json::{json, Value};
-use serde::Serialize;
 use crate::internal;
+use serde::Serialize;
+use serde_json::{json, Value};
 
 #[derive(Serialize, Debug)]
 struct AntithesisSetupData<'a, 'b> {
@@ -23,14 +23,9 @@ struct SetupCompleteData<'a> {
 /// Antithesis will treat the first time any process called this function as the moment that the setup was completed.
 pub fn setup_complete(details: &Value) {
     let status = "complete";
-    let antithesis_setup = AntithesisSetupData::<'_, '_>{
-        status,
-        details,
-    };
+    let antithesis_setup = AntithesisSetupData::<'_, '_> { status, details };
 
-    let setup_complete_data = SetupCompleteData{
-        antithesis_setup
-    };
+    let setup_complete_data = SetupCompleteData { antithesis_setup };
 
     internal::dispatch_output(&setup_complete_data)
 }
@@ -51,7 +46,6 @@ pub fn send_event(name: &str, details: &Value) {
     internal::dispatch_output(&json_event)
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -61,7 +55,6 @@ mod tests {
         eprintln!("setup_complete");
         let details: Value = json!({});
         setup_complete(&details);
-        assert!(true)
     }
 
     #[test]
@@ -75,14 +68,12 @@ mod tests {
             ]
         });
         setup_complete(&details);
-        assert!(true)
     }
 
     #[test]
     fn send_event_without_details() {
         let details: Value = json!({});
         send_event("my event", &details);
-        assert!(true)
     }
 
     #[test]
@@ -95,14 +86,12 @@ mod tests {
             ]
         });
         send_event("my event 2", &details);
-        assert!(true)
     }
 
     #[test]
     fn send_event_unnamed_without_details() {
         let details: Value = json!({});
         send_event("", &details);
-        assert!(true)
     }
 
     #[test]
@@ -111,6 +100,5 @@ mod tests {
             "color": "red"
         });
         send_event("   ", &details);
-        assert!(true)
     }
 }
