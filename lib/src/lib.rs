@@ -1,5 +1,5 @@
-/// The assert module allows you to define new test properties 
-/// for your program or workload.
+/// The assert module enables defining [test properties](https://antithesis.com/docs/using_antithesis/properties.html) 
+/// about your program or [workload](https://antithesis.com/docs/getting_started/workload.html).
 ///
 /// Whenever the environment variable ANTITHESIS_SDK_LOCAL_OUTPUT is 
 /// set, these macros and functions will log to the file pointed 
@@ -8,22 +8,14 @@
 /// This allows you to make use of the Antithesis assertions module 
 /// in your regular testing, or even in production. In particular, 
 /// very few assertions frameworks offer a convenient way to define 
-/// [Sometimes assertions], but they can be quite useful even outside 
+/// [Sometimes assertions](https://antithesis.com/docs/best_practices/sometimes_assertions.html), but they can be quite useful even outside 
 /// Antithesis.
 ///
-/// Each macro/function in this module takes a parameter called message. 
-/// This value of this parameter will become part of the name of 
-/// the test property defined by the function, and will be viewable 
-/// in your [triage report], so it should be human interpretable. 
-/// Assertions in different parts of your code with the same message 
-/// value will be grouped into the same test property, but if one of 
-/// them fails you will be able to see which file and line number are 
-/// associated with each failure.
+/// Each macro/function in this module takes a parameter called message, which is 
+/// a human readable identifier used to aggregate assertions. 
+/// Antithesis generates one test property per unique message and this test property will be named "<message>" in the [triage report](https://antithesis.com/docs/reports/triage.html).
 ///
-/// Each macro/function also takes a parameter called details. 
-/// This parameter allows you to optionally provide a JSON representation
-/// of context information that will be viewable in the 'details' 
-/// tab for any example or counterexample of the associated property.
+/// Each macro/function also takes a parameter called details, which is a key-value map of optional additional information provided by the user to add context for assertion failures. The information that is logged will appear in the logs section of a [triage report](https://antithesis.com/docs/reports/triage.html). Normally the values passed to details are evaluated at runtime.
 pub mod assert;
 
 // External crates used in assertion macros
@@ -37,20 +29,15 @@ pub use linkme;
 pub mod lifecycle;
 
 
-/// The random module provides an interface that allows your program 
-/// to ask the Antithesis platform for random entropy. These functions 
-/// are also safe to call outside the Antithesis environment, where 
-/// they will fall back on values from the rust std library
+/// The random module provides functions that request both structured and unstructured randomness from the Antithesis environment.
+/// 
+/// These functions should not be used to seed a conventional PRNG, and should not have their return values stored and used to make a decision at a later time. 
+/// Doing either of these things makes it much harder for the Antithesis platform to control the history of your program's execution, and also makes it harder for Antithesis to learn which inputs provided at which times are most fruitful. 
+/// Instead, you should call a function from the random package every time your program or [workload](https://antithesis.com/docs/getting_started/workload.html) needs to make a decision, at the moment that you need to make the decision.
+/// 
+/// These functions are also safe to call outside the Antithesis environment, where 
+/// they will fall back on values from the rust std library.
 ///
-/// These functions should not be used to seed a conventional PRNG, 
-/// and should not have their return values stored and used to make a 
-/// decision at a later time. Doing either of these things makes it 
-/// much harder for the Antithesis platform to control the history of 
-/// your program's execution, and also makes it harder for Antithesis 
-/// to learn which inputs provided at which times are most fruitful. 
-/// Instead, you should call a function from the random package every 
-/// time your program or workload needs to make a decision, at the 
-/// moment that you need to make the decision.
 pub mod random;
 
 mod internal;

@@ -16,13 +16,11 @@ struct SetupCompleteData<'a> {
     antithesis_setup: AntithesisSetupData<'a, 'a>,
 }
 
-/// Call this function when your system and workload are fully initialized. 
-/// After this function is called, the Antithesis environment will take a 
-/// snapshot of your system and begin [injecting faults].
+/// Indicates to Antithesis that setup has completed. Call this function when your system and workload are fully initialized. 
+/// After this function is called, Antithesis will take a snapshot of your system and begin [injecting faults]( https://antithesis.com/docs/applications/reliability/fault_injection.html).
 ///
-/// Calling this function multiple times, or from multiple processes, will 
-/// have no effect. Antithesis will treat the first time any process called 
-/// this function as the moment that the setup was completed.
+/// Calling this function multiple times or from multiple processes will have no effect. 
+/// Antithesis will treat the first time any process called this function as the moment that the setup was completed.
 pub fn setup_complete(details: &Value) {
     let status = "complete";
     let antithesis_setup = AntithesisSetupData::<'_, '_>{
@@ -37,8 +35,9 @@ pub fn setup_complete(details: &Value) {
     internal::dispatch_output(&setup_complete_data)
 }
 
-/// Causes an event with the name and details provided,
-/// to be sent to the Fuzzer and Notebook
+/// Indicates to Antithesis that a certain event has been reached. It provides greater information about the ordering of events during the course of testing in Antithesis.
+/// 
+/// In addition to details, you also provide an eventName, which is the name of the event that you are logging. This name will appear in the logs section of a [triage report](https://antithesis.com/docs/reports/triage.html).
 pub fn send_event(name: &str, details: &Value) {
     let trimmed_name = name.trim();
     let owned_name: String = if trimmed_name.is_empty() {
