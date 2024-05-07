@@ -1,7 +1,8 @@
 use antithesis_sdk_rust::lifecycle;
 use serde_json::json;
 
-use crate::common::{self, AntithesisSetup, SDKInput};
+mod common;
+use common::{AntithesisSetup, SDKInput};
 
 const LOCAL_OUTPUT: &str = "ANTITHESIS_SDK_LOCAL_OUTPUT";
 

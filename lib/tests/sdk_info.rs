@@ -1,7 +1,8 @@
 use antithesis_sdk_rust::lifecycle;
 use serde_json::json;
 
-use crate::common::{self, SDKInput};
+mod common;
+use common::SDKInput;
 
 const LOCAL_OUTPUT: &str = "ANTITHESIS_SDK_LOCAL_OUTPUT";
 
@@ -12,29 +13,21 @@ const LOCAL_OUTPUT: &str = "ANTITHESIS_SDK_LOCAL_OUTPUT";
 // {"antithesis_setup":{"details":{"age":4,"name":"Tweety Bird","phones":["+1 9734970340"]},"status":"complete"}}
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 #[test]
-fn send_event() {
-    let output_file = "/tmp/antithesis-send-event.json";
+fn sdk_info() {
+    let output_file = "/tmp/antithesis-sdk.json";
     let prev_v = common::env::set_var(LOCAL_OUTPUT, output_file);
-    let details = json!({
-        "x": 100,
-        "tag": "last value"
-    });
+    let no_details = json!({});
 
     // only added to force the antithesis_sdk info to be generated
-    lifecycle::send_event("logging", &details);
+    lifecycle::setup_complete(&no_details);
 
     // verify the output has landed in the expected file
     match common::read_jsonl_tags(output_file) {
         Ok(x) => {
             for obj in x.iter() {
-                if let SDKInput::SendEvent {
-                    event_name,
-                    details,
-                } = obj
-                {
-                    assert_eq!(event_name, "logging");
-                    assert_eq!(&details["x"], 100);
-                    assert_eq!(&details["tag"], "last value");
+                if let SDKInput::AntithesisSdk(sdk) = obj {
+                    assert_eq!(sdk.protocol_version, "1.0.0");
+                    assert_eq!(sdk.language.name, "Rust")
                 }
             }
         }

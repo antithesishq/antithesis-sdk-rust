@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 pub mod env;
 
 use serde::{Deserialize, Serialize};
@@ -7,7 +8,6 @@ use std::fs;
 #[derive(Deserialize, Debug)]
 pub struct RustLanguage {
     pub name: String,
-    #[allow(dead_code)]
     pub version: String,
 }
 
@@ -35,8 +35,6 @@ pub struct Location {
 }
 
 #[derive(Deserialize, Debug)]
-#[allow(dead_code)]
-// TODO: Setup integration test for assertions.
 pub struct AntithesisAssert {
     assert_type: AssertType,
     condition: bool,
@@ -53,14 +51,9 @@ pub struct AntithesisAssert {
 #[serde(rename_all = "snake_case")]
 pub enum SDKInput {
     AntithesisSdk(AntithesisSdk),
-    #[allow(dead_code)]
-    // TODO: Setup integration test for assertions.
     AntithesisAssert(AntithesisAssert),
     AntithesisSetup(AntithesisSetup),
-    SendEvent {
-        event_name: String,
-        details: Value,
-    },
+    SendEvent { event_name: String, details: Value },
 }
 
 #[derive(Deserialize, Debug)]
