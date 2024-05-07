@@ -8,7 +8,7 @@ fn random_demo() {
     println!("fuzz_get_random() => {}", random::get_random());
 
     // random::random_choices()
-    let choices: Vec<&str> = vec!("abc", "def", "xyz", "qrs");
+    let choices: Vec<&str> = vec!["abc", "def", "xyz", "qrs"];
     let nchoices = 10;
     print!("{nchoices} Choices: ");
     for n in 0..nchoices {
@@ -18,7 +18,7 @@ fn random_demo() {
         }
         match z {
             Some(s) => print!("'{s}'"),
-            None => print!("()")
+            None => print!("()"),
         };
     }
     println!();
@@ -57,7 +57,6 @@ fn lifecycle_demo() {
 }
 
 fn assert_demo() {
-
     // always
     let details = json!({"things": 13});
     assert_always!(true, "Things 777 look good", &details);
@@ -70,10 +69,10 @@ fn assert_demo() {
     let details = json!({"notes": [1,2,3,4,5]});
     assert_sometimes!(false, "Notes have small values", &details);
 
-
     // reachable
     for i in 0..4 {
-        let details = json!({"got here": {"name": "somewhere", "scores": [i*10,(i+1)*10,(i+2)*10]}});
+        let details =
+            json!({"got here": {"name": "somewhere", "scores": [i*10,(i+1)*10,(i+2)*10]}});
         assert_reachable!("Someplace we need to be", &details);
     }
 
@@ -83,8 +82,6 @@ fn assert_demo() {
 }
 
 pub fn main() {
-
-    
     antithesis_init();
     antithesis_init();
     antithesis_init();

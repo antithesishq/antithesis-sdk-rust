@@ -1,9 +1,8 @@
-#[cfg(test)]
-use serde_json::{json};
-use antithesis_sdk_rust::{lifecycle};
-mod common;
+use antithesis_sdk_rust::lifecycle;
+use serde_json::json;
 
-use common::{AntithesisSdk, SDKInput};
+mod common;
+use common::SDKInput;
 
 const LOCAL_OUTPUT: &str = "ANTITHESIS_SDK_LOCAL_OUTPUT";
 
@@ -15,7 +14,6 @@ const LOCAL_OUTPUT: &str = "ANTITHESIS_SDK_LOCAL_OUTPUT";
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 #[test]
 fn sdk_info() {
-
     let output_file = "/tmp/antithesis-sdk.json";
     let prev_v = common::env::set_var(LOCAL_OUTPUT, output_file);
     let no_details = json!({});
@@ -27,17 +25,13 @@ fn sdk_info() {
     match common::read_jsonl_tags(output_file) {
         Ok(x) => {
             for obj in x.iter() {
-                match obj {
-                    SDKInput::AntithesisSdk(AntithesisSdk{language, protocol_version, sdk_version: _}) => {
-                        assert_eq!(protocol_version, "1.0.0");
-                        assert_eq!(language.name, "Rust")
-                    },
-                    _ => ()
+                if let SDKInput::AntithesisSdk(sdk) = obj {
+                    assert_eq!(sdk.protocol_version, "1.0.0");
+                    assert_eq!(sdk.language.name, "Rust")
                 }
             }
-        },
-        Err(e) => println!("{}", e)
+        }
+        Err(e) => println!("{}", e),
     }
     common::env::restore_var(LOCAL_OUTPUT, prev_v);
 }
-

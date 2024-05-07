@@ -1,10 +1,10 @@
+use local_handler::LocalHandler;
+use noop_handler::NoOpHandler;
 use once_cell::sync::Lazy;
 use rustc_version_runtime::version;
 use serde::Serialize;
-use std::io::{Error};
-use local_handler::LocalHandler;
+use std::io::Error;
 use voidstar_handler::VoidstarHandler;
-use noop_handler::NoOpHandler;
 
 mod local_handler;
 mod noop_handler;
@@ -39,15 +39,13 @@ pub(crate) static LIB_HANDLER: Lazy<Box<dyn LibHandler + Sync + Send>> = Lazy::n
         Ok(handler) => Box::new(handler),
         Err(_) => match LocalHandler::new() {
             Some(h) => Box::new(h),
-            None => Box::new(NoOpHandler::new())
-        }
-
+            None => Box::new(NoOpHandler::new()),
+        },
     };
     let s = serde_json::to_string(&sdk_info()).unwrap_or("{}".to_owned());
     let _ = handler.output(s.as_str());
     handler
 });
-
 
 pub(crate) trait LibHandler {
     fn output(&self, value: &str) -> Result<(), Error>;
@@ -55,7 +53,7 @@ pub(crate) trait LibHandler {
 }
 
 // Made public so it can be invoked from the antithesis_sdk_rust::random module
-pub (crate) fn dispatch_random() -> u64 {
+pub(crate) fn dispatch_random() -> u64 {
     LIB_HANDLER.random()
 }
 
@@ -70,10 +68,10 @@ pub (crate) fn dispatch_random() -> u64 {
 // in this case the io::Error is silently ignored.
 //
 // It would be possible to distinguish between these two cases
-// and report detected io:Error's but there is no requirement 
-// to implement this. 
+// and report detected io:Error's but there is no requirement
+// to implement this.
 //
-// Made public so it can be invoked from the antithesis_sdk_rust::lifecycle 
+// Made public so it can be invoked from the antithesis_sdk_rust::lifecycle
 // and antithesis_sdk_rust::assert module
 pub fn dispatch_output<T: Serialize + ?Sized>(json_data: &T) {
     let s = serde_json::to_string(json_data).unwrap_or("{}".to_owned());
@@ -81,18 +79,18 @@ pub fn dispatch_output<T: Serialize + ?Sized>(json_data: &T) {
 }
 
 fn sdk_info() -> AntithesisSDKInfo {
-    let language_data = AntithesisLanguageInfo{
+    let language_data = AntithesisLanguageInfo {
         name: "Rust",
         version: version().to_string(),
     };
 
-    let version_data = AntithesisVersionInfo{
+    let version_data = AntithesisVersionInfo {
         language: language_data,
         sdk_version: SDK_VERSION,
         protocol_version: PROTOCOL_VERSION,
     };
 
-    AntithesisSDKInfo{
+    AntithesisSDKInfo {
         antithesis_sdk: version_data,
     }
 }

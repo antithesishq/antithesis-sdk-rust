@@ -1,0 +1,22 @@
+name: "CI"
+on:
+  pull_request:
+    branches:
+    - main
+  push:
+    branches:
+    - main
+jobs:
+  build:
+    strategy:
+      matrix:
+        min-version: [true, false]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: cachix/install-nix-action@v26
+      with:
+        nix_path: nixpkgs=channel:nixos-unstable
+    - if: ${{ matrix.min-version }}
+      run: nix develop . -c cargo update -Z direct-minimal-versions
+    - run: nix flake check --keep-going --print-build-logs
