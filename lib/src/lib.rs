@@ -1,7 +1,7 @@
 /// The assert module allows you to define new test properties 
 /// for your program or workload.
 ///
-/// If the environment variable ANTITHESIS_SDK_LOCAL_OUTPUT is 
+/// Whenever the environment variable ANTITHESIS_SDK_LOCAL_OUTPUT is 
 /// set, these macros and functions will log to the file pointed 
 /// to by that variable using a structured JSON format defined in 
 /// the Antithesis SDK docs.

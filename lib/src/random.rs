@@ -51,7 +51,7 @@ mod tests {
     fn random_choice_few_choices() {
         
         // For each map key, the value is the count of the number of
-        // randiom_choice responses received matching that key
+        // random_choice responses received matching that key
         let mut counted_items: HashMap<&str, i64> = HashMap::new();
         counted_items.insert("a", 0);
         counted_items.insert("b", 0);
