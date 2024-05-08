@@ -3,6 +3,26 @@ name = "antithesis_sdk"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.62.1"
+license = "MIT"
+readme = "../README.md"
+keywords = ["antithesis", "testing", "fuzzing", "quality"]
+categories= ["autonomous testing", "fuzzing", "continous reliability"]
+repository = "https://github.com/antithesishq/antithesis-sdk-rust"
+homepage = "https://github.com/antithesishq/antithesis-sdk-rust"
+documentation = "https://antithesis.com/docs/using_antithesis/sdk/rust_sdk.html"
+description = """
+### **This SDK is still under development & not ready for adoption yet.**
+
+# Antithesis Rust SDK
+
+This library provides methods for Rust programs to configure the [Antithesis](https://antithesis.com) platform. It contains three kinds of functionality:
+* Assertion macros that allow you to define test properties about your software or workload.
+* Randomness functions for requesting both structured and unstructured randomness from the Antithesis platform.
+* Lifecycle functions that inform the Antithesis environment that particular test phases or milestones have been reached.
+
+For general usage guidance see the [Antithesis Rust SDK Documentation](https://antithesis.com/docs/using_antithesis/sdk/rust_sdk.html)
+
+"""
 
 [dependencies]
 serde = { version = "1.0.113", features = ["derive"] }
