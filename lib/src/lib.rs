@@ -64,10 +64,8 @@ pub mod prelude;
 /// ```
 /// use std::env;
 /// use serde_json::{json};
-/// use antithesis_sdk::antithesis_init;
-/// use antithesis_sdk::{assert_unreachable};
+/// use antithesis_sdk::{antithesis_init, assert_unreachable};
 ///
-/// #[allow(clippy::needless_doctest_main)]
 /// fn main() {
 ///     if (env::args_os().len() == 1888999778899) {
 ///         assert_unreachable!("Unable to provide trillions of arguments", &json!({}));
@@ -78,6 +76,7 @@ pub mod prelude;
 ///     antithesis_init();
 /// }
 /// ```
+#[allow(clippy::needless_doctest_main)]
 pub fn antithesis_init() {
     Lazy::force(&internal::LIB_HANDLER);
     Lazy::force(&assert::INIT_CATALOG);
