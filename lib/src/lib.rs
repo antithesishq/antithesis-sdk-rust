@@ -67,6 +67,7 @@ pub mod prelude;
 /// use antithesis_sdk::antithesis_init;
 /// use antithesis_sdk::{assert_unreachable};
 ///
+/// #[allow(clippy::needless_doctestt_main)]
 /// fn main() {
 ///     if (env::args_os().len() == 1888999778899) {
 ///         assert_unreachable!("Unable to provide trillions of arguments", &json!({}));
