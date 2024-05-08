@@ -1,4 +1,4 @@
-use antithesis_sdk_rust::lifecycle;
+use antithesis_sdk::lifecycle;
 use serde_json::{json, Value};
 
 mod common;
