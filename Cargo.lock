@@ -3,7 +3,7 @@
 version = 3
 
 [[package]]
-name = "antithesis_sdk_rust"
+name = "antithesis_sdk"
 version = "0.1.0"
 dependencies = [
  "libc",
@@ -201,7 +201,7 @@ dependencies = [
 name = "simple"
 version = "0.1.0"
 dependencies = [
- "antithesis_sdk_rust",
+ "antithesis_sdk",
  "serde_json",
 ]
 

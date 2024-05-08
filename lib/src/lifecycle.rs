@@ -16,11 +16,27 @@ struct SetupCompleteData<'a> {
     antithesis_setup: AntithesisSetupData<'a, 'a>,
 }
 
-/// Indicates to Antithesis that setup has completed. Call this function when your system and workload are fully initialized. 
+/// Indicates to Antithesis that setup has completed. Call this function when your system and workload are fully initialized.
 /// After this function is called, Antithesis will take a snapshot of your system and begin [injecting faults]( https://antithesis.com/docs/applications/reliability/fault_injection.html).
 ///
-/// Calling this function multiple times or from multiple processes will have no effect. 
+/// Calling this function multiple times or from multiple processes will have no effect.
 /// Antithesis will treat the first time any process called this function as the moment that the setup was completed.
+///
+/// # Example
+///
+/// ```
+/// use serde_json::{json, Value};
+/// use antithesis_sdk::lifecycle;
+///
+/// let (num_nodes, main_id) = (10, "n-001");
+///
+/// let startup_data: Value = json!({
+///     "num_nodes": num_nodes,
+///     "main_node_id": main_id,
+/// });
+///
+/// lifecycle::setup_complete(&startup_data);
+/// ```
 pub fn setup_complete(details: &Value) {
     let status = "complete";
     let antithesis_setup = AntithesisSetupData::<'_, '_> { status, details };
@@ -31,8 +47,22 @@ pub fn setup_complete(details: &Value) {
 }
 
 /// Indicates to Antithesis that a certain event has been reached. It provides greater information about the ordering of events during the course of testing in Antithesis.
-/// 
+///
 /// In addition to details, you also provide an eventName, which is the name of the event that you are logging. This name will appear in the logs section of a [triage report](https://antithesis.com/docs/reports/triage.html).
+///
+/// # Example
+///
+/// ```
+/// use serde_json::{json, Value};
+/// use antithesis_sdk::lifecycle;
+///
+/// let info_value: Value = json!({
+///     "month": "July",
+///     "day": 17
+/// });
+///
+/// lifecycle::send_event("start_day", &info_value);
+/// ```
 pub fn send_event(name: &str, details: &Value) {
     let trimmed_name = name.trim();
     let owned_name: String = if trimmed_name.is_empty() {
@@ -40,9 +70,7 @@ pub fn send_event(name: &str, details: &Value) {
     } else {
         trimmed_name.to_owned()
     };
-    let json_event = json!({
-        owned_name: details
-    });
+    let json_event = json!({ owned_name: details });
     internal::dispatch_output(&json_event)
 }
 

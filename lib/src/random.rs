@@ -3,6 +3,15 @@ use crate::internal;
 /// Returns a uint64 value chosen by Antithesis. You should not
 /// store this value or use it to seed a PRNG, but should use it
 /// immediately.
+///
+/// # Example
+///
+/// ```
+/// use antithesis_sdk::random;
+///
+/// let value = random::get_random();
+/// println!("Random value(u64): {value}");
+/// ```
 pub fn get_random() -> u64 {
     internal::dispatch_random()
 }
@@ -14,6 +23,17 @@ pub fn get_random() -> u64 {
 /// the Antithesis platform that you intend to use a random value
 /// in a structured way enables it to provide more interesting
 /// choices over time.
+///
+/// # Example
+///
+/// ```
+/// use antithesis_sdk::random;
+///
+/// let choices: Vec<&str> = vec!["abc", "def", "xyz", "qrs"];
+/// if let Some(s) = random::random_choice(choices.as_slice()) {
+///     println!("Choice: '{s}'");
+/// };
+/// ```
 pub fn random_choice<T>(slice: &[T]) -> Option<&T> {
     match slice {
         [] => None,
