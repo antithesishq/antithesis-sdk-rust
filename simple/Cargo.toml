@@ -4,5 +4,5 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-antithesis_sdk_rust = { path = "../lib" }
+antithesis_sdk = { path = "../lib" }
 serde_json = "1.0.25"

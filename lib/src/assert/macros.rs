@@ -79,8 +79,22 @@ macro_rules! assert_helper {
     }};
 }
 
-/// Assert that condition is true every time this function is called, **and** that it is 
+/// Assert that condition is true every time this function is called, **and** that it is
 /// called at least once. The corresponding test property will be viewable in the Antithesis SDK: Always group of your triage report.
+///
+/// # Example
+///
+/// ```
+/// use serde_json::{json};
+/// use antithesis_sdk::{assert_always, random};
+///
+/// const MAX_ALLOWED: u64 = 100;
+/// let actual = random::get_random() % 100u64;
+/// let details = json!({"max_allowed": MAX_ALLOWED, "actual": actual});
+/// antithesis_sdk::assert_always!(actual < MAX_ALLOWED, "Value in range", &details);
+///
+/// assert!(actual < MAX_ALLOWED)
+/// ```
 #[macro_export]
 macro_rules! assert_always {
     ($condition:expr, $message:literal, $details:expr) => {
@@ -88,15 +102,29 @@ macro_rules! assert_always {
             condition = $condition,
             $message,
             $details,
-            AssertType::Always,
+            $crate::assert::AssertType::Always,
             "Always",
             must_hit = true
         )
     };
 }
 
-/// Assert that condition is true every time this function is called. The corresponding test property will pass if the assertion is never encountered (unlike Always assertion types). 
+/// Assert that condition is true every time this function is called. The corresponding test property will pass if the assertion is never encountered (unlike Always assertion types).
 /// This test property will be viewable in the “Antithesis SDK: Always” group of your triage report.
+///
+/// # Example
+///
+/// ```
+/// use serde_json::{json};
+/// use antithesis_sdk::{assert_always_or_unreachable, random};
+///
+/// const MAX_ALLOWED: u64 = 100;
+/// let actual = random::get_random() % 100u64;
+/// let details = json!({"max_allowed": MAX_ALLOWED, "actual": actual});
+/// antithesis_sdk::assert_always_or_unreachable!(actual < MAX_ALLOWED, "Value in range", &details);
+///
+/// assert!(actual < MAX_ALLOWED)
+/// ```
 #[macro_export]
 macro_rules! assert_always_or_unreachable {
     ($condition:expr, $message:literal, $details:expr) => {
@@ -104,16 +132,30 @@ macro_rules! assert_always_or_unreachable {
             condition = $condition,
             $message,
             $details,
-            AssertType::Always,
+            $crate::assert::AssertType::Always,
             "AlwaysOrUnreachable",
             must_hit = false
         )
     };
 }
 
-/// Assert that condition is true at least one time that this function was called. 
-/// (If the assertion is never encountered, the test property will therefore fail.) 
+/// Assert that condition is true at least one time that this function was called.
+/// (If the assertion is never encountered, the test property will therefore fail.)
 /// This test property will be viewable in the “Antithesis SDK: Sometimes” group.
+///
+/// # Example
+///
+/// ```
+/// use serde_json::{json};
+/// use antithesis_sdk::{assert_sometimes, random};
+///
+/// const MAX_ALLOWED: u64 = 100;
+/// let actual = random::get_random() % 120u64;
+/// let details = json!({"max_allowed": MAX_ALLOWED, "actual": actual});
+/// antithesis_sdk::assert_sometimes!(actual > MAX_ALLOWED, "Value in range", &details);
+///
+/// assert!(actual < 120u64)
+/// ```
 #[macro_export]
 macro_rules! assert_sometimes {
     ($condition:expr, $message:literal, $details:expr) => {
@@ -121,16 +163,32 @@ macro_rules! assert_sometimes {
             condition = $condition,
             $message,
             $details,
-            AssertType::Sometimes,
+            $crate::assert::AssertType::Sometimes,
             "Sometimes",
             must_hit = true
         )
     };
 }
 
-/// Assert that a line of code is reached at least once. 
-/// The corresponding test property will pass if this macro is ever called. (If it is never called the test property will therefore fail.) 
+/// Assert that a line of code is reached at least once.
+/// The corresponding test property will pass if this macro is ever called. (If it is never called the test property will therefore fail.)
 /// This test property will be viewable in the “Antithesis SDK: Reachablity assertions” group.
+///
+/// # Example
+///
+/// ```
+/// use serde_json::{json};
+/// use antithesis_sdk::{assert_reachable, random};
+///
+/// const MAX_ALLOWED: u64 = 100;
+/// let actual = random::get_random() % 120u64;
+/// let details = json!({"max_allowed": MAX_ALLOWED, "actual": actual});
+/// if (actual > MAX_ALLOWED) {
+///     antithesis_sdk::assert_reachable!("Value in range", &details);
+/// }
+///
+/// assert!(actual < 120u64)
+/// ```
 #[macro_export]
 macro_rules! assert_reachable {
     ($message:literal, $details:expr) => {
@@ -138,17 +196,33 @@ macro_rules! assert_reachable {
             condition = true,
             $message,
             $details,
-            AssertType::Reachability,
+            $crate::assert::AssertType::Reachability,
             "Reachable",
             must_hit = true
         )
     };
 }
 
-/// Assert that a line of code is never reached. 
-/// The corresponding test property will fail if this macro is ever called. 
-/// (If it is never called the test property will therefore pass.) 
+/// Assert that a line of code is never reached.
+/// The corresponding test property will fail if this macro is ever called.
+/// (If it is never called the test property will therefore pass.)
 /// This test property will be viewable in the “Antithesis SDK: Reachablity assertions” group.
+///
+/// # Example
+///
+/// ```
+/// use serde_json::{json};
+/// use antithesis_sdk::{assert_unreachable, random};
+///
+/// const MAX_ALLOWED: u64 = 100;
+/// let actual = random::get_random() % 120u64;
+/// let details = json!({"max_allowed": MAX_ALLOWED, "actual": actual});
+/// if (actual > 120u64) {
+///     antithesis_sdk::assert_unreachable!("Value is above range", &details);
+/// }
+///
+/// assert!(actual < 120u64)
+/// ```
 #[macro_export]
 macro_rules! assert_unreachable {
     ($message:literal, $details:expr) => {
@@ -156,7 +230,7 @@ macro_rules! assert_unreachable {
             condition = false,
             $message,
             $details,
-            AssertType::Reachability,
+            $crate::assert::AssertType::Reachability,
             "Unreachable",
             must_hit = false
         )

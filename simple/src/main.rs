@@ -1,6 +1,6 @@
 use serde_json::{json, Value};
 
-use antithesis_sdk_rust::prelude::*;
+use antithesis_sdk::prelude::*;
 
 #[allow(dead_code)]
 fn random_demo() {

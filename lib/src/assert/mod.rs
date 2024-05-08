@@ -9,6 +9,7 @@ use std::sync::Mutex;
 mod macros;
 
 /// Catalog of all antithesis assertions provided
+#[doc(hidden)]
 #[distributed_slice]
 pub static ANTITHESIS_CATALOG: [CatalogInfo];
 
@@ -81,6 +82,7 @@ struct AntithesisLocationInfo {
 }
 
 /// Internal representation for assertion catalog
+#[doc(hidden)]
 #[derive(Debug)]
 pub struct CatalogInfo {
     pub assert_type: AssertType,
@@ -195,6 +197,116 @@ impl AssertionInfo {
     }
 }
 
+/// This is a low-level method designed to be used by third-party frameworks.
+/// Regular users of the assert package should not call it.
+///
+/// This is primarily intended for use by adapters from other
+/// diagnostic tools that intend to output Antithesis-style
+/// assertions.
+///
+/// Be certain to provide an assertion catalog entry
+/// for each assertion issued with assert_raw().  Assertion catalog
+/// entries are also created useing assert_raw(), by setting the value
+/// of the `'hit'` parameter to false.
+///
+/// Please refer to the general Antithesis documentation regarding the
+/// use of the [Fallback SDK](https://antithesis.com/docs/using_antithesis/sdk/fallback/assert.html)
+/// for additional information.
+///
+///
+///
+/// # Example
+///
+/// ```
+/// use serde_json::{json};
+/// use antithesis_sdk::{assert, random};
+///
+/// struct Votes {
+///     num_voters: u32,
+///     candidate_1: u32,
+///     candidate_2: u32,
+/// }
+///
+/// fn main() {
+///     establish_catalog();
+///    
+///     let mut all_votes = Votes {
+///         num_voters: 0,
+///         candidate_1: 0,
+///         candidate_2: 0,
+///     };
+///
+///     for _voter in 0..100 {
+///         tally_vote(&mut all_votes, random_bool(), random_bool());
+///     }
+/// }
+///
+/// fn random_bool() -> bool {
+///     let v1 = random::get_random() % 2;
+///     v1 == 1
+/// }
+///
+/// fn establish_catalog() {
+///     assert::assert_raw(
+///         false,                            /* condition */
+///         "Never extra votes".to_owned(),   /* message */
+///         &json!({}),                       /* details */
+///         "mycrate::stuff".to_owned(),      /* class */
+///         "mycrate::tally_vote".to_owned(), /* function */
+///         "src/voting.rs".to_owned(),       /* file */
+///         20,                               /* line */
+///         3,                                /* column */
+///         false,                            /* hit */
+///         true,                             /* must_hit */
+///         assert::AssertType::Always,       /* assert_type */
+///         "Always".to_owned(),              /* display_type */
+///         "42-1005".to_owned()              /* id */
+///     );
+/// }
+///
+/// fn tally_vote(votes: &mut Votes, candidate_1: bool, candidate_2: bool) {
+///     if candidate_1 || candidate_2 {
+///         votes.num_voters += 1;
+///     }
+///     if candidate_1 {
+///         votes.candidate_1 += 1;
+///     };
+///     if candidate_2 {
+///         votes.candidate_2 += 1;
+///     };
+///
+///     let num_votes = votes.candidate_1 + votes.candidate_2;
+///     assert::assert_raw(
+///         num_votes == votes.num_voters,    /* condition */
+///         "Never extra votes".to_owned(),   /* message */
+///         &json!({                          /* details */
+///             "votes": num_votes,
+///             "voters": votes.num_voters
+///         }),                        
+///         "mycrate::stuff".to_owned(),      /* class */
+///         "mycrate::tally_vote".to_owned(), /* function */
+///         "src/voting.rs".to_owned(),       /* file */
+///         20,                               /* line */
+///         3,                                /* column */
+///         true,                             /* hit */
+///         true,                             /* must_hit */
+///         assert::AssertType::Always,       /* assert_type */
+///         "Always".to_owned(),              /* display_type */
+///         "42-1005".to_owned()              /* id */
+///     );
+/// }
+///
+/// // Run example with output to /tmp/x7.json
+/// // ANTITHESIS_SDK_LOCAL_OUTPUT=/tmp/x7.json cargo test --doc
+/// //
+/// // Example output from /tmp/x7.json
+/// // Contents may vary due to use of random::get_random()
+/// //
+/// // {"antithesis_sdk":{"language":{"name":"Rust","version":"1.69.0"},"sdk_version":"0.1.2","protocol_version":"1.0.0"}}
+/// // {"assert_type":"always","display_type":"Always","condition":false,"message":"Never extra votes","location":{"class":"mycrate::stuff","function":"mycrate::tally_vote","file":"src/voting.rs","begin_line":20,"begin_column":3},"hit":false,"must_hit":true,"id":"42-1005","details":{}}
+/// // {"assert_type":"always","display_type":"Always","condition":true,"message":"Never extra votes","location":{"class":"mycrate::stuff","function":"mycrate::tally_vote","file":"src/voting.rs","begin_line":20,"begin_column":3},"hit":true,"must_hit":true,"id":"42-1005","details":{"voters":1,"votes":1}}
+/// // {"assert_type":"always","display_type":"Always","condition":false,"message":"Never extra votes","location":{"class":"mycrate::stuff","function":"mycrate::tally_vote","file":"src/voting.rs","begin_line":20,"begin_column":3},"hit":true,"must_hit":true,"id":"42-1005","details":{"voters":3,"votes":4}}
+/// ```
 #[allow(clippy::too_many_arguments)]
 pub fn assert_raw(
     condition: bool,
@@ -228,8 +340,7 @@ pub fn assert_raw(
     )
 }
 
-/// This is a low-level method designed to be used by third-party frameworks.
-/// Regular users of the assert package should not call it.
+#[doc(hidden)]
 #[allow(clippy::too_many_arguments)]
 pub fn assert_impl(
     assert_type: AssertType,
