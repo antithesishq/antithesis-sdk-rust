@@ -10,11 +10,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: actions-rs/toolchain@v1
+    - uses: actions-rust-lang/setup-rust-toolchain@v1.8.0
       with:
-        profile: minimal
         toolchain: stable
-        override: true
 
     - run: cargo publish --dry-run --token ${CRATES_TOKEN} -p antithesis_sdk
       env:
