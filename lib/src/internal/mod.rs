@@ -34,6 +34,8 @@ const PROTOCOL_VERSION: &str = "1.0.0";
 // Tracks SDK releases
 const SDK_VERSION: &str = "0.1.2";
 
+pub const LOCAL_OUTPUT: &str = "ANTITHESIS_SDK_LOCAL_OUTPUT";
+
 pub(crate) static LIB_HANDLER: Lazy<Box<dyn LibHandler + Sync + Send>> = Lazy::new(|| {
     let handler: Box<dyn LibHandler + Sync + Send> = match VoidstarHandler::try_load() {
         Ok(handler) => Box::new(handler),

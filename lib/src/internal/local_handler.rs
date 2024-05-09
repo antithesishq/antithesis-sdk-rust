@@ -2,10 +2,7 @@ use std::env;
 use std::fs::File;
 use std::io::{Error, Write};
 
-// use crate::internal::noop_handler::NoOpHandler;
-use crate::internal::LibHandler;
-
-const LOCAL_OUTPUT: &str = "ANTITHESIS_SDK_LOCAL_OUTPUT";
+use crate::internal::{LibHandler, LOCAL_OUTPUT};
 
 pub struct LocalHandler {
     writer: File,

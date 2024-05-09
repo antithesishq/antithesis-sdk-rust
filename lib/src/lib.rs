@@ -84,3 +84,5 @@ pub fn antithesis_init() {
 
 pub use assert::{assert_impl, assert_raw, CatalogInfo};
 use once_cell::sync::Lazy;
+
+pub use crate::internal::LOCAL_OUTPUT;

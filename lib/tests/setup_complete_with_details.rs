@@ -1,17 +1,35 @@
-use antithesis_sdk::lifecycle;
+use antithesis_sdk::{lifecycle, LOCAL_OUTPUT};
 use serde_json::{json, Value};
 
 mod common;
 use common::{AntithesisSetup, SDKInput};
 
-const LOCAL_OUTPUT: &str = "ANTITHESIS_SDK_LOCAL_OUTPUT";
+// Expected output in /tmp/antithesis-lifecycle-with-details.json
+// Note: Actual version info in antithesis_sdk can vary
+//
+// {
+//   "antithesis_sdk": {
+//     "language": {
+//       "name": "Rust",
+//       "version": "1.69.0"
+//     },
+//     "sdk_version": "0.1.2",
+//     "protocol_version": "1.0.0"
+//   }
+// }
+// {
+//   "antithesis_setup": {
+//     "status": "complete",
+//     "details": {
+//       "age": 4,
+//       "name": "Tweety Bird",
+//       "phones": [
+//         "+1 9374970340"
+//       ]
+//     }
+//   }
+// }
 
-// ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-// File: /tmp/antithesis-lifecycle.json
-// ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-// {"antithesis_sdk":{"language":{"name":"Rust","version":"1.77.1"},"protocol_version":"1.0.0","sdk_version":"0.1.1"}}
-// {"antithesis_setup":{"details":{"age":4,"name":"Tweety Bird","phones":["+1 9734970340"]},"status":"complete"}}
-// ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 #[test]
 fn setup_complete_with_details() {
     let output_file = "/tmp/antithesis-lifecycle-with-details.json";
@@ -20,7 +38,7 @@ fn setup_complete_with_details() {
         "name": "Tweety Bird",
         "age": 4,
         "phones": [
-        "+1 9734970340"
+        "+1 9374970340"
     ]
     });
     lifecycle::setup_complete(&bird_value);
