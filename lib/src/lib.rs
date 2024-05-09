@@ -82,7 +82,10 @@ pub fn antithesis_init() {
     Lazy::force(&assert::INIT_CATALOG);
 }
 
-pub use assert::{assert_impl, assert_raw, CatalogInfo};
 use once_cell::sync::Lazy;
 
+/// The name of the environment variable containing a path to a file 
+/// that can be created and written to when not running in the Antithesis
+/// Testing environment.  If this environment variable is not present at
+/// runtime, then no assertion and lifecycle output will be attempted.
 pub use crate::internal::LOCAL_OUTPUT;
