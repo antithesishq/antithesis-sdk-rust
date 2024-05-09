@@ -1,20 +1,32 @@
-use antithesis_sdk::lifecycle;
+use antithesis_sdk::{lifecycle, LOCAL_OUTPUT};
 use serde_json::json;
 
 mod common;
 use common::{AntithesisSetup, SDKInput};
 
-const LOCAL_OUTPUT: &str = "ANTITHESIS_SDK_LOCAL_OUTPUT";
+// Expected output in /tmp/antithesis-setup-complete-without-details.json
+// Note: Actual version info in antithesis_sdk can vary
+//
+// {
+//   "antithesis_sdk": {
+//     "language": {
+//       "name": "Rust",
+//       "version": "1.69.0"
+//     },
+//     "sdk_version": "0.1.2",
+//     "protocol_version": "1.0.0"
+//   }
+// }
+// {
+//   "antithesis_setup": {
+//     "status": "complete",
+//     "details": {}
+//   }
+// }
 
-// ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-// File: /tmp/antithesis-lifecycle.json
-// ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-// {"antithesis_sdk":{"language":{"name":"Rust","version":"1.77.1"},"protocol_version":"1.0.0","sdk_version":"0.1.1"}}
-// {"antithesis_setup":{"details":{},"status":"complete"}}
-// ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 #[test]
 fn setup_complete_without_details() {
-    let output_file = "/tmp/antithesis-lifecycle-withou-details.json";
+    let output_file = "/tmp/antithesis-setup-complete-without-details.json";
     let prev_v = common::env::set_var(LOCAL_OUTPUT, output_file);
     let no_details = json!({});
 
