@@ -193,7 +193,8 @@ impl AssertionInfo {
     }
 
     fn emit(&self) {
-        internal::dispatch_output(&self);
+        let json_event = json!({ "antithesis_assert": &self });
+        internal::dispatch_output(&json_event)
     }
 }
 

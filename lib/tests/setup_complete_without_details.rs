@@ -14,7 +14,7 @@ const LOCAL_OUTPUT: &str = "ANTITHESIS_SDK_LOCAL_OUTPUT";
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 #[test]
 fn setup_complete_without_details() {
-    let output_file = "/tmp/antithesis-lifecycle-withou-details.json";
+    let output_file = "/tmp/antithesis-lifecycle-without-details.json";
     let prev_v = common::env::set_var(LOCAL_OUTPUT, output_file);
     let no_details = json!({});
 

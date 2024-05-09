@@ -27,24 +27,24 @@ pub struct AntithesisSetup {
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Location {
-    begin_column: i32,
-    begin_line: i32,
-    class: String,
-    file: String,
-    function: String,
+    pub begin_column: i32,
+    pub begin_line: i32,
+    pub class: String,
+    pub file: String,
+    pub function: String,
 }
 
 #[derive(Deserialize, Debug)]
 pub struct AntithesisAssert {
-    assert_type: AssertType,
-    condition: bool,
-    display_type: String,
-    hit: bool,
-    must_hit: bool,
-    id: String,
-    message: String,
-    location: Location,
-    details: Value,
+    pub assert_type: AssertType,
+    pub condition: bool,
+    pub display_type: String,
+    pub hit: bool,
+    pub must_hit: bool,
+    pub id: String,
+    pub message: String,
+    pub location: Location,
+    pub details: Value,
 }
 
 #[derive(Deserialize, Debug)]
@@ -56,9 +56,9 @@ pub enum SDKInput {
     SendEvent { event_name: String, details: Value },
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, PartialEq)]
 #[serde(rename_all = "snake_case")]
-enum AssertType {
+pub enum AssertType {
     Always,
     Sometimes,
     Reachability,
