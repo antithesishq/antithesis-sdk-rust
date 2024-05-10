@@ -28,6 +28,6 @@ jobs:
 
     - name: Cargo Publish
       if:   ${{ inputs.dry-run != true && inputs.dry-run != 'true' }} 
-      run: echo we will publish for real
+      run: cargo publish --token ${CRATES_TOKEN} -p antithesis_sdk
       env:
         CRATES_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
