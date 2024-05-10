@@ -21,13 +21,13 @@ jobs:
         toolchain: stable
     
     - name: Cargo Publish (Dry Run)
-      if:  ${{ inputs.dry-run === 'true' }} 
+      if:  ${{ inputs.dry-run == 'true' }} 
       run: cargo publish --dry-run --token ${CRATES_TOKEN} -p antithesis_sdk
       env:
         CRATES_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
     - name: Cargo Publish
-      if:  ${{ inputs.dry-run !== 'true' }}
+      if:  ${{ inputs.dry-run != 'true' }}
       run: echo we will publish for real
       env:
         CRATES_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
