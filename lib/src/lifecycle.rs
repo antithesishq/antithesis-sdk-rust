@@ -43,9 +43,9 @@ pub fn setup_complete(details: &Value) {
     internal::dispatch_output(&setup_complete_data)
 }
 
-/// Indicates to Antithesis that a certain event has been reached. It provides greater information about the ordering of events during the course of testing in Antithesis.
+/// Indicates to Antithesis that a certain event has been reached. It sends a structured log message to Antithesis that you may later use to aid debugging.
 ///
-/// In addition to ``details``, you also provide an event ``name``, which is the name of the event that you are logging. This name will appear in the logs section of a [triage report](https://antithesis.com/docs/reports/triage.html).
+/// In addition to ``details``, you also provide ``name``, which is the name of the event that you are logging. This name will appear in the ``logs`` section of a [triage report](https://antithesis.com/docs/reports/triage.html).
 ///
 /// # Example
 ///

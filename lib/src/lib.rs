@@ -1,10 +1,10 @@
 /// The assert module enables defining [test properties](https://antithesis.com/docs/using_antithesis/properties.html)
 /// about your program or [workload](https://antithesis.com/docs/getting_started/workload.html).
 ///
-/// Whenever the environment variable ANTITHESIS_SDK_LOCAL_OUTPUT is
+/// Whenever the environment variable ``ANTITHESIS_SDK_LOCAL_OUTPUT`` is
 /// set, these macros and functions will log to the file pointed
 /// to by that variable using a structured JSON format defined in
-/// the Antithesis SDK docs.
+/// the [Antithesis SDK docs](https://antithesis.com/docs/using_antithesis/sdk/fallback/assert.html#syntax).
 /// This allows you to make use of the Antithesis assertions module
 /// in your regular testing, or even in production. In particular,
 /// very few assertions frameworks offer a convenient way to define
@@ -13,10 +13,10 @@
 ///
 /// Each macro/function in this module takes a parameter called ``message``, which is
 /// a string literal identifier used to aggregate assertions.
-/// Antithesis generates one test property per unique message and this test property will be named with thee string literal provided in the [triage report](https://antithesis.com/docs/reports/triage.html).
+/// Antithesis generates one test property per unique ``message`` This test property will be named ``message`` in the [triage report](https://antithesis.com/docs/reports/triage.html).
 ///
 /// Each macro/function also takes a parameter called ``details``, which is a key-value map of optional additional information provided by the user to add context for assertion failures.
-/// The information that is logged will appear in the logs section of a [triage report](https://antithesis.com/docs/reports/triage.html).
+/// The information that is logged will appear in the ``logs`` section of a [triage report](https://antithesis.com/docs/reports/triage.html).
 /// Normally the values in ``details`` are evaluated at runtime.
 pub mod assert;
 
@@ -37,7 +37,7 @@ pub mod lifecycle;
 /// Instead, you should call a function from the random package every time your program or [workload](https://antithesis.com/docs/getting_started/workload.html) needs to make a decision, at the moment that you need to make the decision.
 ///
 /// These functions are also safe to call outside the Antithesis environment, where
-/// they will fall back on values from the rust std library.
+/// they will fall back on the rust std library implementation.
 ///
 pub mod random;
 

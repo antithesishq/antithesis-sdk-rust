@@ -10,17 +10,17 @@ macro_rules! assert_helper {
         let condition = $condition;
         let details = $details;
 
-        // Define a do-nothing function 'f()' within the context of
-        // the function invoking an assertion.  Then the type_name of
+        // Define a do-nothing function `'f()'` within the context of
+        // the function invoking an assertion.  Then the ``type_name`` of
         // this do-nothing will be something like:
         //
         //     bincrate::binmod::do_stuff::f
         //
-        // After trimming off the last three chars `::f` what remains is
+        // After trimming off the last three chars ``::f`` what remains is
         // the full path to the name of the function invoking the assertion
         //
-        // Both the untrimmed `NAME` and trimmed `FUN_NAME` are lazily
-        // initialized statics so that `FUN_NAME` can be available at
+        // Both the untrimmed ``NAME`` and trimmed ``FUN_NAME`` are lazily
+        // initialized statics so that ``FUN_NAME`` can be available at
         // assertion catalog registration time.
         use $crate::once_cell::sync::Lazy;
         fn f() {}
@@ -107,8 +107,8 @@ macro_rules! assert_always {
     };
 }
 
-/// Assert that ``condition`` is true every time this function is called. The corresponding test property will pass if the assertion is never encountered (unlike Always assertion types).
-/// This test property will be viewable in the “Antithesis SDK: Always” group of your triage report.
+/// Assert that ``condition`` is true every time this function is called. The corresponding test property will pass even if the assertion is never encountered.
+/// This test property will be viewable in the ``Antithesis SDK: Always`` group of your triage report.
 ///
 /// # Example
 ///
@@ -137,7 +137,7 @@ macro_rules! assert_always_or_unreachable {
 
 /// Assert that ``condition`` is true at least one time that this function was called.
 /// (If the assertion is never encountered, the test property will therefore fail.)
-/// This test property will be viewable in the “Antithesis SDK: Sometimes” group.
+/// This test property will be viewable in the ``Antithesis SDK: Sometimes`` group.
 ///
 /// # Example
 ///
@@ -166,7 +166,7 @@ macro_rules! assert_sometimes {
 
 /// Assert that a line of code is reached at least once.
 /// The corresponding test property will pass if this macro is ever called. (If it is never called the test property will therefore fail.)
-/// This test property will be viewable in the “Antithesis SDK: Reachablity assertions” group.
+/// This test property will be viewable in the ``Antithesis SDK: Reachablity assertions`` group.
 ///
 /// # Example
 ///
@@ -198,7 +198,7 @@ macro_rules! assert_reachable {
 /// Assert that a line of code is never reached.
 /// The corresponding test property will fail if this macro is ever called.
 /// (If it is never called the test property will therefore pass.)
-/// This test property will be viewable in the “Antithesis SDK: Reachablity assertions” group.
+/// This test property will be viewable in the ``Antithesis SDK: Reachablity assertions`` group.
 ///
 /// # Example
 ///
