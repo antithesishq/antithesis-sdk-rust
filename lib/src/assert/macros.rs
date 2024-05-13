@@ -79,7 +79,7 @@ macro_rules! assert_helper {
     }};
 }
 
-/// Assert that condition is true every time this function is called, **and** that it is
+/// Assert that ``condition`` is true every time this function is called, **and** that it is
 /// called at least once. The corresponding test property will be viewable in the Antithesis SDK: Always group of your triage report.
 ///
 /// # Example
@@ -92,8 +92,6 @@ macro_rules! assert_helper {
 /// let actual = random::get_random() % 100u64;
 /// let details = json!({"max_allowed": MAX_ALLOWED, "actual": actual});
 /// antithesis_sdk::assert_always!(actual < MAX_ALLOWED, "Value in range", &details);
-///
-/// assert!(actual < MAX_ALLOWED)
 /// ```
 #[macro_export]
 macro_rules! assert_always {
@@ -109,7 +107,7 @@ macro_rules! assert_always {
     };
 }
 
-/// Assert that condition is true every time this function is called. The corresponding test property will pass if the assertion is never encountered (unlike Always assertion types).
+/// Assert that ``condition`` is true every time this function is called. The corresponding test property will pass if the assertion is never encountered (unlike Always assertion types).
 /// This test property will be viewable in the “Antithesis SDK: Always” group of your triage report.
 ///
 /// # Example
@@ -122,8 +120,6 @@ macro_rules! assert_always {
 /// let actual = random::get_random() % 100u64;
 /// let details = json!({"max_allowed": MAX_ALLOWED, "actual": actual});
 /// antithesis_sdk::assert_always_or_unreachable!(actual < MAX_ALLOWED, "Value in range", &details);
-///
-/// assert!(actual < MAX_ALLOWED)
 /// ```
 #[macro_export]
 macro_rules! assert_always_or_unreachable {
@@ -139,7 +135,7 @@ macro_rules! assert_always_or_unreachable {
     };
 }
 
-/// Assert that condition is true at least one time that this function was called.
+/// Assert that ``condition`` is true at least one time that this function was called.
 /// (If the assertion is never encountered, the test property will therefore fail.)
 /// This test property will be viewable in the “Antithesis SDK: Sometimes” group.
 ///
@@ -153,8 +149,6 @@ macro_rules! assert_always_or_unreachable {
 /// let actual = random::get_random() % 120u64;
 /// let details = json!({"max_allowed": MAX_ALLOWED, "actual": actual});
 /// antithesis_sdk::assert_sometimes!(actual > MAX_ALLOWED, "Value in range", &details);
-///
-/// assert!(actual < 120u64)
 /// ```
 #[macro_export]
 macro_rules! assert_sometimes {
@@ -186,8 +180,6 @@ macro_rules! assert_sometimes {
 /// if (actual > MAX_ALLOWED) {
 ///     antithesis_sdk::assert_reachable!("Value in range", &details);
 /// }
-///
-/// assert!(actual < 120u64)
 /// ```
 #[macro_export]
 macro_rules! assert_reachable {
@@ -220,8 +212,6 @@ macro_rules! assert_reachable {
 /// if (actual > 120u64) {
 ///     antithesis_sdk::assert_unreachable!("Value is above range", &details);
 /// }
-///
-/// assert!(actual < 120u64)
 /// ```
 #[macro_export]
 macro_rules! assert_unreachable {

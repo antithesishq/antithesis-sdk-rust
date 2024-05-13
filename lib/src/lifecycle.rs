@@ -1,6 +1,3 @@
-//! The lifecycle module contains functions which inform the Antithesis
-//! environment that particular test phases or milestones have been reached.
-
 use crate::internal;
 use serde::Serialize;
 use serde_json::{json, Value};
@@ -48,7 +45,7 @@ pub fn setup_complete(details: &Value) {
 
 /// Indicates to Antithesis that a certain event has been reached. It provides greater information about the ordering of events during the course of testing in Antithesis.
 ///
-/// In addition to details, you also provide an eventName, which is the name of the event that you are logging. This name will appear in the logs section of a [triage report](https://antithesis.com/docs/reports/triage.html).
+/// In addition to ``details``, you also provide an event ``name``, which is the name of the event that you are logging. This name will appear in the logs section of a [triage report](https://antithesis.com/docs/reports/triage.html).
 ///
 /// # Example
 ///

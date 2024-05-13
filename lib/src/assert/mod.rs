@@ -208,7 +208,7 @@ impl AssertionInfo {
 /// Be certain to provide an assertion catalog entry
 /// for each assertion issued with assert_raw().  Assertion catalog
 /// entries are also created useing assert_raw(), by setting the value
-/// of the `'hit'` parameter to false.
+/// of the ``hit`` parameter to false.
 ///
 /// Please refer to the general Antithesis documentation regarding the
 /// use of the [Fallback SDK](https://antithesis.com/docs/using_antithesis/sdk/fallback/assert.html)

@@ -11,13 +11,13 @@
 /// [Sometimes assertions](https://antithesis.com/docs/best_practices/sometimes_assertions.html), but they can be quite useful even outside
 /// Antithesis.
 ///
-/// Each macro/function in this module takes a parameter called message, which is
-/// a human readable identifier used to aggregate assertions.
-/// Antithesis generates one test property per unique message and this test property will be named "message" in the [triage report](https://antithesis.com/docs/reports/triage.html).
+/// Each macro/function in this module takes a parameter called ``message``, which is
+/// a string literal identifier used to aggregate assertions.
+/// Antithesis generates one test property per unique message and this test property will be named with thee string literal provided in the [triage report](https://antithesis.com/docs/reports/triage.html).
 ///
-/// Each macro/function also takes a parameter called details, which is a key-value map of optional additional information provided by the user to add context for assertion failures.
+/// Each macro/function also takes a parameter called ``details``, which is a key-value map of optional additional information provided by the user to add context for assertion failures.
 /// The information that is logged will appear in the logs section of a [triage report](https://antithesis.com/docs/reports/triage.html).
-/// Normally the values passed to details are evaluated at runtime.
+/// Normally the values in ``details`` are evaluated at runtime.
 pub mod assert;
 
 // External crates used in assertion macros
