@@ -9,7 +9,8 @@ For general usage guidance see the [Antithesis Rust SDK Documentation](http://an
 
 ### Notes
 
-Please use llvm's link/loader from clang version 14 or greater.
+GNU Binutils `ld` works reliably when building/running rust applications that use the Antithesis SDK.
+
 
 To disable assertions use this feature flag for cargo builds:
 
