@@ -32,7 +32,7 @@ struct AntithesisSDKInfo {
 const PROTOCOL_VERSION: &str = "1.0.0";
 
 // Tracks SDK releases
-const SDK_VERSION: &str = "0.1.2";
+const SDK_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub const LOCAL_OUTPUT: &str = "ANTITHESIS_SDK_LOCAL_OUTPUT";
 
