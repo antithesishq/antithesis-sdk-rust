@@ -1,7 +1,7 @@
 /// The assert module enables defining [test properties](https://antithesis.com/docs/using_antithesis/properties.html)
 /// about your program or [workload](https://antithesis.com/docs/getting_started/workload.html).
 ///
-/// The environment variable [const@LOCAL_OUTPUT] may be used for local logging, which is one of the [local execution](https://antithesis.com/docs/using_antithesis/sdk/rust/overview.html#sdk-runtime-behavior) modes.
+/// The constant [const@LOCAL_OUTPUT] is associated with local logging, which is one of the [local execution](https://antithesis.com/docs/using_antithesis/sdk/rust/overview.html#sdk-runtime-behavior) modes.
 ///
 /// Each macro/function in this module takes a parameter called ``message``, which is
 /// a string literal identifier used to aggregate assertions.
@@ -21,7 +21,7 @@ pub use once_cell;
 /// The lifecycle module contains functions which inform the Antithesis
 /// environment that particular test phases or milestones have been reached.
 /// 
-/// The environment variable [const@LOCAL_OUTPUT] may be used for local logging, which is one of the [local execution](https://antithesis.com/docs/using_antithesis/sdk/rust/overview.html#sdk-runtime-behavior) modes.
+/// The constant [const@LOCAL_OUTPUT] is associated with local logging, which is one of the [local execution](https://antithesis.com/docs/using_antithesis/sdk/rust/overview.html#sdk-runtime-behavior) modes.
 pub mod lifecycle;
 
 /// The random module provides functions that request both structured and unstructured randomness from the Antithesis environment.
@@ -40,9 +40,9 @@ mod internal;
 /// Convenience to import all macros and functions
 pub mod prelude;
 
-/// Global initialization logic.  Performs registration of the
-/// Antithesis assertion catalog.  This should be invoked as early as
-/// possible during program execution. It is recommended to call immediately in main.
+/// Global initialization logic. Performs registration of the
+/// Antithesis assertion catalog. This should be invoked as early as
+/// possible during program execution. It is recommended to call it immediately in ``main``.
 ///
 /// If called more than once, only the first call will result
 /// in the assertion catalog being registered.  If never called,
@@ -73,9 +73,10 @@ pub fn antithesis_init() {
 
 use once_cell::sync::Lazy;
 
-/// The name of the environment variable containing a path to a file 
-/// that can be created and written to when not running in the Antithesis
-/// Testing environment.  If this environment variable is not present at
+/// A constant provided by the SDK to report the location of logged output when run locally.
+/// This constant is the name of an environment variable ``ANTITHESIS_SDK_LOCAL_OUTPUT``.
+/// ``ANTITHESIS_SDK_LOCAL_OUTPUT`` is a path to a file 
+/// that can be created and written to when running locally.  If this environment variable is not present at
 /// runtime, then no assertion and lifecycle output will be attempted.
 /// 
 /// This allows you to make use of the Antithesis assertions module
