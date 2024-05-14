@@ -1,15 +1,7 @@
 /// The assert module enables defining [test properties](https://antithesis.com/docs/using_antithesis/properties.html)
 /// about your program or [workload](https://antithesis.com/docs/getting_started/workload.html).
 ///
-/// Whenever the environment variable ``ANTITHESIS_SDK_LOCAL_OUTPUT`` is
-/// set, these macros and functions will log to the file pointed
-/// to by that variable using a structured JSON format defined in
-/// the [Antithesis SDK docs](https://antithesis.com/docs/using_antithesis/sdk/fallback/assert.html#syntax).
-/// This allows you to make use of the Antithesis assertions module
-/// in your regular testing, or even in production. In particular,
-/// very few assertions frameworks offer a convenient way to define
-/// [Sometimes assertions](https://antithesis.com/docs/best_practices/sometimes_assertions.html), but they can be quite useful even outside
-/// Antithesis.
+/// The environment variable [const@LOCAL_OUTPUT] may be used for local logging, which is one of the [local execution](https://antithesis.com/docs/using_antithesis/sdk/rust/overview.html#sdk-runtime-behavior) modes.
 ///
 /// Each macro/function in this module takes a parameter called ``message``, which is
 /// a string literal identifier used to aggregate assertions.
@@ -54,10 +46,6 @@ pub mod prelude;
 /// in the assertion catalog being registered.  If never called,
 /// the assertion catalog will be registered when it encounters the first assertion at runtime.
 ///
-/// Warning - if assertions are included in a program, and not
-/// encountered at runtime, and ``antithesis_init()`` has not been
-/// called, then the assertions will not be reported.
-///
 /// Example:
 ///
 /// ```
@@ -87,4 +75,12 @@ use once_cell::sync::Lazy;
 /// that can be created and written to when not running in the Antithesis
 /// Testing environment.  If this environment variable is not present at
 /// runtime, then no assertion and lifecycle output will be attempted.
+/// 
+/// This allows you to make use of the Antithesis assertions module
+/// in your regular testing, or even in production. In particular,
+/// very few assertions frameworks offer a convenient way to define
+/// [Sometimes assertions](https://antithesis.com/docs/best_practices/sometimes_assertions.html), but they can be quite useful even outside
+/// Antithesis.
+/// 
+/// See also the documentation for [local execution](https://antithesis.com/docs/using_antithesis/sdk/rust/overview.html#sdk-runtime-behavior).
 pub use crate::internal::LOCAL_OUTPUT;
