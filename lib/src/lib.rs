@@ -48,15 +48,14 @@ pub mod prelude;
 
 /// Global initialization logic.  Performs registration of the
 /// Antithesis assertion catalog.  This should be invoked as early as
-/// possible during program execution (invoke first thing in main).
+/// possible during program execution. It is recommended to call immediately in main.
 ///
-/// If invoked more than once, only the first call will result
-/// in the assertion catalog being registered.  If not invoked at all,
-/// the assertion catalog will be registered upon the first
-/// assertion that is encountered at runtime.
+/// If called more than once, only the first call will result
+/// in the assertion catalog being registered.  If never called,
+/// the assertion catalog will be registered when it encounters the first assertion at runtime.
 ///
 /// Warning - if assertions are included in a program, and not
-/// encountered at runtime, and antithesis_init() has not been
+/// encountered at runtime, and ``antithesis_init()`` has not been
 /// called, then the assertions will not be reported.
 ///
 /// Example:

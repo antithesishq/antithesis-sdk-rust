@@ -16,8 +16,8 @@ pub static ANTITHESIS_CATALOG: [CatalogInfo];
 // Only need an ASSET_TRACKER if there are actually assertions 'hit'
 // (i.e. encountered and invoked at runtime).
 //
-// Typically runtime assertions use the macros always!(), sometimes!(), etc.
-// or, a client is using the 'raw' interface 'assert_raw' at runtime.
+// Typically runtime assertions use the macros ``always!``, ``sometimes!``, etc.
+// or, a client is using the 'raw' interface ``assert_raw`` at runtime.
 //
 pub(crate) static ASSERT_TRACKER: Lazy<Mutex<HashMap<String, TrackingInfo>>> =
     Lazy::new(|| Mutex::new(HashMap::new()));
@@ -206,8 +206,8 @@ impl AssertionInfo {
 /// assertions.
 ///
 /// Be certain to provide an assertion catalog entry
-/// for each assertion issued with assert_raw().  Assertion catalog
-/// entries are also created useing assert_raw(), by setting the value
+/// for each assertion issued with ``assert_raw()``.  Assertion catalog
+/// entries are also created using ``assert_raw()``, by setting the value
 /// of the ``hit`` parameter to false.
 ///
 /// Please refer to the general Antithesis documentation regarding the
