@@ -20,6 +20,8 @@ pub use once_cell;
 
 /// The lifecycle module contains functions which inform the Antithesis
 /// environment that particular test phases or milestones have been reached.
+/// 
+/// The environment variable [const@LOCAL_OUTPUT] may be used for local logging, which is one of the [local execution](https://antithesis.com/docs/using_antithesis/sdk/rust/overview.html#sdk-runtime-behavior) modes.
 pub mod lifecycle;
 
 /// The random module provides functions that request both structured and unstructured randomness from the Antithesis environment.
