@@ -45,7 +45,7 @@ pub fn setup_complete(details: &Value) {
 
 /// Indicates to Antithesis that a certain event has been reached. It sends a structured log message to Antithesis that you may later use to aid debugging.
 ///
-/// In addition to ``details``, you also provide ``name``, which is the name of the event that you are logging. This name will appear in the ``logs`` section of a [triage report](https://antithesis.com/docs/reports/triage.html).
+/// In addition to ``details``, you also provide ``name``, which is the name of the event that you are logging.
 ///
 /// # Example
 ///

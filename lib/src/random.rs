@@ -1,6 +1,6 @@
 use crate::internal;
 
-/// Returns a uint64 value chosen by Antithesis. You should not
+/// Returns a u64 value chosen by Antithesis. You should not
 /// store this value or use it to seed a PRNG, but should use it
 /// immediately.
 ///

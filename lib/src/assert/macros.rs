@@ -80,7 +80,7 @@ macro_rules! assert_helper {
 }
 
 /// Assert that ``condition`` is true every time this function is called, **and** that it is
-/// called at least once. The corresponding test property will be viewable in the Antithesis SDK: Always group of your triage report.
+/// called at least once. The corresponding test property will be viewable in the ``Antithesis SDK: Always`` group of your triage report.
 ///
 /// # Example
 ///
