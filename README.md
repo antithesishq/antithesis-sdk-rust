@@ -9,9 +9,6 @@ For general usage guidance see the [Antithesis Rust SDK Documentation](http://an
 
 ### Notes
 
-GNU Binutils `ld` works reliably when building/running rust applications that use the Antithesis SDK.
-
-
 To disable assertions use this feature flag for cargo builds:
 
     -F no-antithesis-sdk
