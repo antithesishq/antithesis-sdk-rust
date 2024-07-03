@@ -9,12 +9,10 @@ For general usage guidance see the [Antithesis Rust SDK Documentation](https://a
 
 ### Notes
 
-To disable assertions use this feature flag for cargo builds:
-
-    -F no-antithesis-sdk
+To disable assertions disable `default-features` for this crate.
 
 When assertions are disabled, the `condition` and `detail` arguments specified
-for assertions will be evaluated, but no assertions will be emitted, or otherwise processed.  
+for assertions will be evaluated, but no assertions will be emitted, or otherwise processed.
 
-In this case (using feature flag `no-antithesis-sdk`), the assert macros will expand to 
-nothing (other than the evaluation of `condition` and `details`)
+In this case, the assert macros will expand to
+nothing (other than the evaluation of `condition` and `details`).
