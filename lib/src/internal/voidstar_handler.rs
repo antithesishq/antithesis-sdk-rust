@@ -6,6 +6,7 @@ use crate::internal::LibHandler;
 
 const LIB_NAME: &str = "/usr/lib/libvoidstar.so";
 
+
 pub struct VoidstarHandler {
     // Not used directly but exists to ensure the library is loaded
     // and all the following function pointers points to valid memory.

@@ -4,10 +4,12 @@ use once_cell::sync::Lazy;
 use rustc_version_runtime::version;
 use serde::Serialize;
 use std::io::Error;
+#[cfg(feature = "full")]
 use voidstar_handler::VoidstarHandler;
 
 mod local_handler;
 mod noop_handler;
+#[cfg(feature = "full")]
 mod voidstar_handler;
 
 #[derive(Serialize, Debug)]
@@ -36,14 +38,24 @@ const SDK_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub const LOCAL_OUTPUT: &str = "ANTITHESIS_SDK_LOCAL_OUTPUT";
 
-pub(crate) static LIB_HANDLER: Lazy<Box<dyn LibHandler + Sync + Send>> = Lazy::new(|| {
-    let handler: Box<dyn LibHandler + Sync + Send> = match VoidstarHandler::try_load() {
+#[cfg(feature = "full")]
+fn get_handler() -> Box<dyn LibHandler + Sync + Send> {
+    match VoidstarHandler::try_load() {
         Ok(handler) => Box::new(handler),
         Err(_) => match LocalHandler::new() {
             Some(h) => Box::new(h),
             None => Box::new(NoOpHandler::new()),
         },
-    };
+    }
+}
+
+#[cfg(not(feature = "full"))]
+fn get_handler() -> Box<dyn LibHandler + Sync + Send> {
+    Box::new(NoOpHandler::new())
+}
+
+pub(crate) static LIB_HANDLER: Lazy<Box<dyn LibHandler + Sync + Send>> = Lazy::new(|| {
+    let handler = get_handler();
     let s = serde_json::to_string(&sdk_info()).unwrap_or("{}".to_owned());
     let _ = handler.output(s.as_str());
     handler

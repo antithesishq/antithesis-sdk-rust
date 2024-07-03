@@ -10,6 +10,7 @@
 /// Each macro/function also takes a parameter called ``details``, which is a key-value map of optional additional information provided by the user to add context for assertion failures.
 /// The information that is logged will appear in the ``logs`` section of a [triage report](https://antithesis.com/docs/reports/triage.html).
 /// Normally the values in ``details`` are evaluated at runtime.
+#[cfg(feature = "full")]
 pub mod assert;
 
 // External crates used in assertion macros
