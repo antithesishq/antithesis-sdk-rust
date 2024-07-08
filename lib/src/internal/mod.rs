@@ -1,16 +1,24 @@
-use local_handler::LocalHandler;
-use noop_handler::NoOpHandler;
-use once_cell::sync::Lazy;
 use rustc_version_runtime::version;
 use serde::Serialize;
 use std::io::Error;
+
+use noop_handler::NoOpHandler;
 #[cfg(feature = "full")]
 use voidstar_handler::VoidstarHandler;
+#[cfg(feature = "full")]
+use local_handler::LocalHandler;
 
-mod local_handler;
+#[cfg(feature = "full")]
+use once_cell::sync::Lazy;
+
+
 mod noop_handler;
 #[cfg(feature = "full")]
 mod voidstar_handler;
+
+#[cfg(feature = "full")]
+mod local_handler;
+
 
 #[derive(Serialize, Debug)]
 struct AntithesisLanguageInfo {
@@ -54,12 +62,17 @@ fn get_handler() -> Box<dyn LibHandler + Sync + Send> {
     Box::new(NoOpHandler::new())
 }
 
+#[cfg(feature = "full")]
 pub(crate) static LIB_HANDLER: Lazy<Box<dyn LibHandler + Sync + Send>> = Lazy::new(|| {
     let handler = get_handler();
     let s = serde_json::to_string(&sdk_info()).unwrap_or("{}".to_owned());
     let _ = handler.output(s.as_str());
     handler
 });
+
+
+#[cfg(not(feature = "full"))]
+pub(crate) static LIB_HANDLER: NoOpHandler = NoOpHandler{};
 
 pub(crate) trait LibHandler {
     fn output(&self, value: &str) -> Result<(), Error>;

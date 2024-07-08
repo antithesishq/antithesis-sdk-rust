@@ -15,8 +15,10 @@ pub mod assert;
 
 // External crates used in assertion macros
 #[doc(hidden)]
+#[cfg(feature = "full")]
 pub use linkme;
 #[doc(hidden)]
+#[cfg(feature = "full")]
 pub use once_cell;
 
 /// The lifecycle module contains functions which inform the Antithesis
@@ -68,8 +70,10 @@ pub mod prelude;
 /// ```
 #[allow(clippy::needless_doctest_main)]
 pub fn antithesis_init() {
-    Lazy::force(&internal::LIB_HANDLER);
-    Lazy::force(&assert::INIT_CATALOG);
+    if cfg!(feature = "full") {
+        Lazy::force(&internal::LIB_HANDLER);
+        Lazy::force(&assert::INIT_CATALOG);
+    }
 }
 
 use once_cell::sync::Lazy;
