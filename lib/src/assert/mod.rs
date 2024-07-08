@@ -1,9 +1,17 @@
+#[cfg(feature = "full")]
 use crate::internal;
+#[cfg(feature = "full")]
 use linkme::distributed_slice;
+#[cfg(feature = "full")]
 use once_cell::sync::Lazy;
 use serde::Serialize;
-use serde_json::{json, Value};
+use serde_json::Value;
+#[cfg(feature = "full")]
+use serde_json::json;
+
+#[cfg(feature = "full")]
 use std::collections::HashMap;
+#[cfg(feature = "full")]
 use std::sync::Mutex;
 
 mod macros;
@@ -11,6 +19,7 @@ mod macros;
 /// Catalog of all antithesis assertions provided
 #[doc(hidden)]
 #[distributed_slice]
+#[cfg(feature = "full")]
 pub static ANTITHESIS_CATALOG: [CatalogInfo];
 
 // Only need an ASSET_TRACKER if there are actually assertions 'hit'
@@ -19,9 +28,11 @@ pub static ANTITHESIS_CATALOG: [CatalogInfo];
 // Typically runtime assertions use the macros ``always!``, ``sometimes!``, etc.
 // or, a client is using the 'raw' interface ``assert_raw`` at runtime.
 //
+#[cfg(feature = "full")]
 pub(crate) static ASSERT_TRACKER: Lazy<Mutex<HashMap<String, TrackingInfo>>> =
     Lazy::new(|| Mutex::new(HashMap::new()));
 
+#[cfg(feature = "full")]
 pub(crate) static INIT_CATALOG: Lazy<()> = Lazy::new(|| {
     let no_details: Value = json!({});
     for info in ANTITHESIS_CATALOG.iter() {
@@ -44,17 +55,20 @@ pub(crate) static INIT_CATALOG: Lazy<()> = Lazy::new(|| {
     }
 });
 
+#[cfg(feature = "full")]
 pub(crate) struct TrackingInfo {
     pub pass_count: u64,
     pub fail_count: u64,
 }
 
+#[cfg(feature = "full")]
 impl Default for TrackingInfo {
     fn default() -> Self {
         Self::new()
     }
 }
 
+#[cfg(feature = "full")]
 impl TrackingInfo {
     pub fn new() -> Self {
         TrackingInfo {
@@ -84,6 +98,7 @@ struct AntithesisLocationInfo {
 /// Internal representation for assertion catalog
 #[doc(hidden)]
 #[derive(Debug)]
+#[cfg(feature = "full")]
 pub struct CatalogInfo {
     pub assert_type: AssertType,
     pub display_type: &'static str,
@@ -148,7 +163,10 @@ impl AssertionInfo {
             details: details.clone(),
         }
     }
+} 
 
+#[cfg(feature = "full")]
+impl AssertionInfo {
     // AssertionInfo::track_entry() determines if the assertion should
     // actually be emitted:
     //
@@ -197,6 +215,14 @@ impl AssertionInfo {
         internal::dispatch_output(&json_event)
     }
 }
+
+#[cfg(not(feature = "full"))]
+impl AssertionInfo {
+    fn track_entry(&self) {
+        return
+    }
+}
+
 
 /// This is a low-level method designed to be used by third-party frameworks.
 /// Regular users of the assert package should not call it.
@@ -373,6 +399,7 @@ pub fn assert_impl(
         id,
         details,
     );
+
     let _ = &assertion.track_entry();
 }
 

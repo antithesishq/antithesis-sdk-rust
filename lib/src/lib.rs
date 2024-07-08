@@ -10,7 +10,6 @@
 /// Each macro/function also takes a parameter called ``details``, which is a key-value map of optional additional information provided by the user to add context for assertion failures.
 /// The information that is logged will appear in the ``logs`` section of a [triage report](https://antithesis.com/docs/reports/triage.html).
 /// Normally the values in ``details`` are evaluated at runtime.
-#[cfg(feature = "full")]
 pub mod assert;
 
 // External crates used in assertion macros
@@ -70,12 +69,19 @@ pub mod prelude;
 /// ```
 #[allow(clippy::needless_doctest_main)]
 pub fn antithesis_init() {
-    if cfg!(feature = "full") {
-        Lazy::force(&internal::LIB_HANDLER);
-        Lazy::force(&assert::INIT_CATALOG);
-    }
+    init();
 }
 
+#[cfg(feature = "full")]
+fn init() {
+    Lazy::force(&internal::LIB_HANDLER);
+    Lazy::force(&assert::INIT_CATALOG);
+}
+
+#[cfg(not(feature = "full"))]
+fn init() {}
+
+#[cfg(feature = "full")]
 use once_cell::sync::Lazy;
 
 /// A constant provided by the SDK to report the location of logged output when run locally.

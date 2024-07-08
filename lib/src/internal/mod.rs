@@ -39,9 +39,11 @@ struct AntithesisSDKInfo {
 }
 
 // Hardly ever changes, refers to the underlying JSON representation
+#[allow(dead_code)]
 const PROTOCOL_VERSION: &str = "1.0.0";
 
 // Tracks SDK releases
+#[allow(dead_code)]
 const SDK_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub const LOCAL_OUTPUT: &str = "ANTITHESIS_SDK_LOCAL_OUTPUT";
@@ -58,6 +60,7 @@ fn get_handler() -> Box<dyn LibHandler + Sync + Send> {
 }
 
 #[cfg(not(feature = "full"))]
+#[allow(dead_code)]
 fn get_handler() -> Box<dyn LibHandler + Sync + Send> {
     Box::new(NoOpHandler::new())
 }
@@ -105,6 +108,7 @@ pub fn dispatch_output<T: Serialize + ?Sized>(json_data: &T) {
     let _ = LIB_HANDLER.output(s.as_str());
 }
 
+#[allow(dead_code)]
 fn sdk_info() -> AntithesisSDKInfo {
     let language_data = AntithesisLanguageInfo {
         name: "Rust",

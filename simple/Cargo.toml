@@ -4,5 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-antithesis_sdk = { path = "../lib" }
+antithesis_sdk = { path = "../lib", default-features = false }
 serde_json = "1.0.25"
+
+
+[features]
+default = ["antithesis_sdk/full"]
