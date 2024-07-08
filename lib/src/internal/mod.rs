@@ -1,8 +1,11 @@
-use rustc_version_runtime::version;
 use serde::Serialize;
 use std::io::Error;
 
 use noop_handler::NoOpHandler;
+
+#[cfg(feature = "full")]
+use rustc_version_runtime::version;
+
 #[cfg(feature = "full")]
 use voidstar_handler::VoidstarHandler;
 #[cfg(feature = "full")]
@@ -108,7 +111,7 @@ pub fn dispatch_output<T: Serialize + ?Sized>(json_data: &T) {
     let _ = LIB_HANDLER.output(s.as_str());
 }
 
-#[allow(dead_code)]
+#[cfg(feature = "full")]
 fn sdk_info() -> AntithesisSDKInfo {
     let language_data = AntithesisLanguageInfo {
         name: "Rust",
