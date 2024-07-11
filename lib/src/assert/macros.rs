@@ -1,5 +1,5 @@
 /// Common handling used by all the assertion-related macros
-#[cfg(not(feature = "no-antithesis-sdk"))]
+#[cfg(feature = "full")]
 #[doc(hidden)]
 #[macro_export]
 macro_rules! assert_helper {
@@ -65,7 +65,8 @@ macro_rules! assert_helper {
         )
     }}; // end pattern-arm block
 }
-#[cfg(feature = "no-antithesis-sdk")]
+
+#[cfg(not(feature = "full"))]
 #[doc(hidden)]
 #[macro_export]
 macro_rules! assert_helper {

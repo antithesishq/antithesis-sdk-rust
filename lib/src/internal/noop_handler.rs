@@ -4,6 +4,7 @@ use std::io::Error;
 pub struct NoOpHandler {}
 
 impl NoOpHandler {
+    #[allow(dead_code)]
     pub fn new() -> Self {
         NoOpHandler {}
     }

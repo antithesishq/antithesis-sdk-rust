@@ -1,14 +1,27 @@
-use local_handler::LocalHandler;
-use noop_handler::NoOpHandler;
-use once_cell::sync::Lazy;
-use rustc_version_runtime::version;
 use serde::Serialize;
 use std::io::Error;
-use voidstar_handler::VoidstarHandler;
 
-mod local_handler;
+use noop_handler::NoOpHandler;
+
+#[cfg(feature = "full")]
+use rustc_version_runtime::version;
+
+#[cfg(feature = "full")]
+use voidstar_handler::VoidstarHandler;
+#[cfg(feature = "full")]
+use local_handler::LocalHandler;
+
+#[cfg(feature = "full")]
+use once_cell::sync::Lazy;
+
+
 mod noop_handler;
+#[cfg(feature = "full")]
 mod voidstar_handler;
+
+#[cfg(feature = "full")]
+mod local_handler;
+
 
 #[derive(Serialize, Debug)]
 struct AntithesisLanguageInfo {
@@ -29,25 +42,43 @@ struct AntithesisSDKInfo {
 }
 
 // Hardly ever changes, refers to the underlying JSON representation
+#[allow(dead_code)]
 const PROTOCOL_VERSION: &str = "1.0.0";
 
 // Tracks SDK releases
+#[allow(dead_code)]
 const SDK_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub const LOCAL_OUTPUT: &str = "ANTITHESIS_SDK_LOCAL_OUTPUT";
 
-pub(crate) static LIB_HANDLER: Lazy<Box<dyn LibHandler + Sync + Send>> = Lazy::new(|| {
-    let handler: Box<dyn LibHandler + Sync + Send> = match VoidstarHandler::try_load() {
+#[cfg(feature = "full")]
+fn get_handler() -> Box<dyn LibHandler + Sync + Send> {
+    match VoidstarHandler::try_load() {
         Ok(handler) => Box::new(handler),
         Err(_) => match LocalHandler::new() {
             Some(h) => Box::new(h),
             None => Box::new(NoOpHandler::new()),
         },
-    };
+    }
+}
+
+#[cfg(not(feature = "full"))]
+#[allow(dead_code)]
+fn get_handler() -> Box<dyn LibHandler + Sync + Send> {
+    Box::new(NoOpHandler::new())
+}
+
+#[cfg(feature = "full")]
+pub(crate) static LIB_HANDLER: Lazy<Box<dyn LibHandler + Sync + Send>> = Lazy::new(|| {
+    let handler = get_handler();
     let s = serde_json::to_string(&sdk_info()).unwrap_or("{}".to_owned());
     let _ = handler.output(s.as_str());
     handler
 });
+
+
+#[cfg(not(feature = "full"))]
+pub(crate) static LIB_HANDLER: NoOpHandler = NoOpHandler{};
 
 pub(crate) trait LibHandler {
     fn output(&self, value: &str) -> Result<(), Error>;
@@ -80,6 +111,7 @@ pub fn dispatch_output<T: Serialize + ?Sized>(json_data: &T) {
     let _ = LIB_HANDLER.output(s.as_str());
 }
 
+#[cfg(feature = "full")]
 fn sdk_info() -> AntithesisSDKInfo {
     let language_data = AntithesisLanguageInfo {
         name: "Rust",
