@@ -19,6 +19,9 @@ pub use linkme;
 #[doc(hidden)]
 #[cfg(feature = "full")]
 pub use once_cell;
+#[doc(hidden)]
+#[cfg(feature = "full")]
+pub use serde_json;
 
 /// The lifecycle module contains functions which inform the Antithesis
 /// environment that particular test phases or milestones have been reached.
