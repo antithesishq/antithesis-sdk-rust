@@ -8,6 +8,20 @@ use crate::internal;
 
 use super::AntithesisLocationInfo;
 
+// Types and traits that model the SDK filtering of numerical guidance reporting.
+// For assertions like "always (x < y)", we would like to only report the most extreme
+// violations seen so far, which is implemented by having a `Guard` that keep a maximizing
+// watermark on the difference (x - y).
+// The `AtomicMinMax` trait requirement allows multiple concurrent update to the watermark.
+
+// NOTE: The structures setup in this modules allow `Guard` to be generic over the numeric
+// type (or even any partially ordered type).
+// But due to some limitation of stable Rust, we are only instanciating `Guard<f64>` by
+// converting the result of all `x - y` into `f64`.
+// See the impl `numeric_guidance_helper` for more details on the limitation.
+// Once that is lifted, some implementations of `Diff` can be changed to truly take advantage
+// of the zero-cost polymorphism that `Guard` provides.
+
 pub struct Guard<const MAX: bool, T: AtomicMinMax> {
     mark: T::Atomic,
 }
@@ -71,6 +85,8 @@ macro_rules! impl_extremal_atomic {
 
 impl_extremal_atomic! { (AtomicUsize, usize) (AtomicU8, u8) (AtomicU16, u16) (AtomicU32, u32) (AtomicU64, u64) (AtomicIsize, isize) (AtomicI8, i8) (AtomicI16, i16) (AtomicI32, i32) (AtomicI64, i64) }
 
+// For atomic floats, their minimal/maximal elements are `-inf` and `+inf` respectively.
+
 impl Extremal for AtomicF32 {
     const MIN: Self = AtomicF32(AtomicU32::new(0xff800000));
     const MAX: Self = AtomicF32(AtomicU32::new(0x7f800000));
@@ -106,6 +122,8 @@ macro_rules! impl_atomic_min_max_float {
         impl AtomicMinMax for $t {
             type Atomic = $atomic_t;
 
+            // TODO: Check the atomic orderings are used properly in general.
+            // Right now we are always passing SeqCst, which should be fine.
             fn fetch_min(current: &Self::Atomic, other: Self, ordering: atomic::Ordering) -> Self {
                 <$t>::from_bits(current.0.fetch_update(ordering, ordering, |x| Some(<$t>::from_bits(x).min(other).to_bits())).unwrap())
             }

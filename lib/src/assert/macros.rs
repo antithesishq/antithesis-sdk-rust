@@ -295,6 +295,19 @@ macro_rules! numeric_guidance_helper {
             "left": left,
             "right": right,
         });
+        // TODO: Right now it seems to be impossible for this macro to use the returned
+        // type of `diff` to instanciate the `T` in `Guard<T>`, which has to be
+        // explicitly provided for the static variable `GUARD`.
+        // Instead, we currently fix `T` to be `f64`, and ensure all implementations of `Diff` returns `f64`.
+        // Here are some related language limitations:
+        // - Although `typeof` is a reserved keyword in Rust, it is never implemented. See <https://stackoverflow.com/questions/64890774>.
+        // - Rust does not, and explicitly would not (see https://doc.rust-lang.org/reference/items/static-items.html#statics--generics), support generic static variable.
+        // - Type inference is not performed for static variable, i.e. `Guard<_>` is not allowed.
+        // - Some form of existential type can help, but that's only available in nightly Rust under feature `type_alias_impl_trait`.
+        //
+        // Other approaches I can think of either requires dynamic type tagging that has
+        // runtime overhead, or requires the user of the macro to explicitly provide the type,
+        // which is really not ergonomic and deviate from the APIs from other SDKs.
         let diff = $crate::assert::guidance::Diff::diff(&left, right);
         type Guard<T> = $crate::assert::guidance::Guard<$maximize, T>;
         // TODO: Waiting for [type_alias_impl_trait](https://github.com/rust-lang/rust/issues/63063) to stabilize...
@@ -345,6 +358,7 @@ macro_rules! boolean_guidance_helper {
     }};
 }
 
+/// `assert_always_greater_than(x, y, ...)` is mostly equivalent to `assert_always!(x > y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
 #[macro_export]
 macro_rules! assert_always_greater_than {
     ($left:expr, $right:expr, $message:literal, $details:expr) => {
@@ -352,6 +366,7 @@ macro_rules! assert_always_greater_than {
     };
 }
 
+/// `assert_always_greater_than_or_equal_to(x, y, ...)` is mostly equivalent to `assert_always!(x >= y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
 #[macro_export]
 macro_rules! assert_always_greater_than_or_equal_to {
     ($left:expr, $right:expr, $message:literal, $details:expr) => {
@@ -359,6 +374,7 @@ macro_rules! assert_always_greater_than_or_equal_to {
     };
 }
 
+/// `assert_always_less_than(x, y, ...)` is mostly equivalent to `assert_always!(x < y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
 #[macro_export]
 macro_rules! assert_always_less_than {
     ($left:expr, $right:expr, $message:literal, $details:expr) => {
@@ -366,6 +382,7 @@ macro_rules! assert_always_less_than {
     };
 }
 
+/// `assert_always_less_than_or_equal_to(x, y, ...)` is mostly equivalent to `assert_always!(x <= y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
 #[macro_export]
 macro_rules! assert_always_less_than_or_equal_to {
     ($left:expr, $right:expr, $message:literal, $details:expr) => {
@@ -373,6 +390,7 @@ macro_rules! assert_always_less_than_or_equal_to {
     };
 }
 
+/// `assert_sometimes_greater_than(x, y, ...)` is mostly equivalent to `assert_sometimes!(x > y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
 #[macro_export]
 macro_rules! assert_sometimes_greater_than {
     ($left:expr, $right:expr, $message:literal, $details:expr) => {
@@ -380,6 +398,7 @@ macro_rules! assert_sometimes_greater_than {
     };
 }
 
+/// `assert_sometimes_greater_than_or_equal_to(x, y, ...)` is mostly equivalent to `assert_sometimes!(x >= y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
 #[macro_export]
 macro_rules! assert_sometimes_greater_than_or_equal_to {
     ($left:expr, $right:expr, $message:literal, $details:expr) => {
@@ -387,6 +406,7 @@ macro_rules! assert_sometimes_greater_than_or_equal_to {
     };
 }
 
+/// `assert_sometimes_less_than(x, y, ...)` is mostly equivalent to `assert_sometimes!(x < y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
 #[macro_export]
 macro_rules! assert_sometimes_less_than {
     ($left:expr, $right:expr, $message:literal, $details:expr) => {
@@ -394,6 +414,7 @@ macro_rules! assert_sometimes_less_than {
     };
 }
 
+/// `assert_sometimes_less_than_or_equal_to(x, y, ...)` is mostly equivalent to `assert_sometimes!(x <= y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
 #[macro_export]
 macro_rules! assert_sometimes_less_than_or_equal_to {
     ($left:expr, $right:expr, $message:literal, $details:expr) => {
@@ -401,6 +422,10 @@ macro_rules! assert_sometimes_less_than_or_equal_to {
     };
 }
 
+/// `assert_always_some({a: x, b: y, ...})` is similar to `assert_always(x || y || ...)`, except:
+/// - Antithesis has more visibility to the individual propositions.
+/// - There is no short-circuiting, so all of `x`, `y`, ... would be evaluated.
+/// - The assertion details would be merged with `{"a": x, "b": y, ...}`.
 #[macro_export]
 macro_rules! assert_always_some {
     ({$($name:ident: $cond:expr),*}, $message:literal, $details:expr) => {
@@ -408,6 +433,10 @@ macro_rules! assert_always_some {
     }
 }
 
+/// `assert_sometimes_all({a: x, b: y, ...})` is similar to `assert_sometimes(x && y && ...)`, except:
+/// - Antithesis has more visibility to the individual propositions.
+/// - There is no short-circuiting, so all of `x`, `y`, ... would be evaluated.
+/// - The assertion details would be merged with `{"a": x, "b": y, ...}`.
 #[macro_export]
 macro_rules! assert_sometimes_all {
     ({$($name:ident: $cond:expr),*}, $message:literal, $details:expr) => {
