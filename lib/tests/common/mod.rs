@@ -48,10 +48,22 @@ pub struct AntithesisAssert {
 }
 
 #[derive(Deserialize, Debug)]
+pub struct AntithesisGuidance {
+    pub guidance_type: GuidanceType,
+    pub message: String,
+    pub id: String,
+    pub location: Location,
+    pub maximize: bool,
+    pub guidance_data: Value,
+    pub hit: bool,
+}
+
+#[derive(Deserialize, Debug)]
 #[serde(rename_all = "snake_case")]
 pub enum SDKInput {
     AntithesisSdk(AntithesisSdk),
     AntithesisAssert(AntithesisAssert),
+    AntithesisGuidance(AntithesisGuidance),
     AntithesisSetup(AntithesisSetup),
     SendEvent { event_name: String, details: Value },
 }
@@ -62,6 +74,14 @@ pub enum AssertType {
     Always,
     Sometimes,
     Reachability,
+}
+
+#[derive(Deserialize, Debug, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum GuidanceType {
+    Numeric,
+    Boolean,
+    JSON,
 }
 
 fn parse_lines(lines: Vec<&str>) -> Result<Vec<SDKInput>, Box<dyn std::error::Error>> {
