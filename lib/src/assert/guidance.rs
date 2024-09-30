@@ -21,12 +21,11 @@ use super::AntithesisLocationInfo;
 // See the impl `numeric_guidance_helper` for more details on the limitation.
 // Once that is lifted, some implementations of `Diff` can be changed to truly take advantage
 // of the zero-cost polymorphism that `Guard` provides.
-
 pub struct Guard<const MAX: bool, T: AtomicMinMax> {
     mark: T::Atomic,
 }
 
-trait Extremal {
+pub trait Extremal {
     const MIN: Self;
     const MAX: Self;
 }
@@ -39,7 +38,7 @@ where T::Atomic: Extremal {
     }
 }
 
-trait AtomicMinMax {
+pub trait AtomicMinMax {
     type Atomic;
     fn fetch_min(current: &Self::Atomic, other: Self, ordering: atomic::Ordering) -> Self;
     fn fetch_max(current: &Self::Atomic, other: Self, ordering: atomic::Ordering) -> Self;
@@ -47,12 +46,13 @@ trait AtomicMinMax {
 
 impl<const MAX: bool, T: AtomicMinMax + PartialOrd + Copy> Guard<MAX, T> {
     pub fn should_emit(&self, new: T) -> bool {
+        use std::cmp::Ordering::*;
         if MAX {
             let max = T::fetch_max(&self.mark, new, atomic::Ordering::SeqCst);
-            !(max >= new)
+            matches!(max.partial_cmp(&new), None | Some(Less | Equal))
         } else {
             let min = T::fetch_min(&self.mark, new, atomic::Ordering::SeqCst);
-            !(min <= new)
+            matches!(min.partial_cmp(&new), None | Some(Greater | Equal))
         }
     }
 }
@@ -76,6 +76,7 @@ impl_extremal! { usize u8 u16 u32 u64 u128 isize i8 i16 i32 i64 i128 f32 f64 }
 
 macro_rules! impl_extremal_atomic {
     ($(($t:ty, $raw_t:ty))*) => {$(
+        #[allow(clippy::declare_interior_mutable_const)]
         impl Extremal for $t {
             const MIN: $t = <$t>::new(<$raw_t>::MIN);
             const MAX: $t = <$t>::new(<$raw_t>::MAX);
@@ -87,11 +88,13 @@ impl_extremal_atomic! { (AtomicUsize, usize) (AtomicU8, u8) (AtomicU16, u16) (At
 
 // For atomic floats, their minimal/maximal elements are `-inf` and `+inf` respectively.
 
+#[allow(clippy::declare_interior_mutable_const)]
 impl Extremal for AtomicF32 {
     const MIN: Self = AtomicF32(AtomicU32::new(0xff800000));
     const MAX: Self = AtomicF32(AtomicU32::new(0x7f800000));
 }
 
+#[allow(clippy::declare_interior_mutable_const)]
 impl Extremal for AtomicF64 {
     const MIN: Self = AtomicF64(AtomicU64::new(0xfff0000000000000));
     const MAX: Self = AtomicF64(AtomicU64::new(0x7ff0000000000000));
@@ -117,7 +120,7 @@ impl_atomic_min_max! { (usize, AtomicUsize) (u8, AtomicU8) (u16, AtomicU16) (u32
 
 macro_rules! impl_atomic_min_max_float {
     ($(($t:ty, $atomic_t:ident, $store_t:ty))*) => {$(
-        struct $atomic_t($store_t);
+        pub struct $atomic_t($store_t);
 
         impl AtomicMinMax for $t {
             type Atomic = $atomic_t;
@@ -192,7 +195,7 @@ impl_diff_float! { f32 f64 }
 pub enum GuidanceType {
     Numeric,
     Boolean,
-    JSON,
+    Json,
 }
 
 #[derive(Serialize)]
@@ -218,6 +221,7 @@ pub struct GuidanceCatalogInfo {
     pub maximize: bool,
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn guidance_impl(
     guidance_type: GuidanceType,
     message: String,

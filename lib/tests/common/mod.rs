@@ -81,7 +81,7 @@ pub enum AssertType {
 pub enum GuidanceType {
     Numeric,
     Boolean,
-    JSON,
+    Json,
 }
 
 fn parse_lines(lines: Vec<&str>) -> Result<Vec<SDKInput>, Box<dyn std::error::Error>> {
