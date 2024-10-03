@@ -44,7 +44,6 @@ pub(crate) static ASSERT_TRACKER: Lazy<Mutex<HashMap<String, TrackingInfo>>> =
 
 #[cfg(feature = "full")]
 pub(crate) static INIT_CATALOG: Lazy<()> = Lazy::new(|| {
-    let no_details: Value = json!({});
     for info in ANTITHESIS_CATALOG.iter() {
         let f_name: &str = info.function.as_ref();
         assert_impl(
@@ -60,7 +59,7 @@ pub(crate) static INIT_CATALOG: Lazy<()> = Lazy::new(|| {
             false, /* hit */
             info.must_hit,
             info.id.to_owned(),
-            &no_details,
+            &json!(null),
         );
     }
     for info in ANTITHESIS_GUIDANCE_CATALOG.iter() {

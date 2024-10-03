@@ -165,6 +165,8 @@ macro_rules! impl_diff_signed {
 
             fn diff(&self, other: Self) -> Self::Output {
                 if *self < other {
+                    // For correctness, see
+                    // https://github.com/rust-lang/rust/blob/11e760b7f4e4aaa11bf51a64d4bb7f1171f6e466/library/core/src/num/int_macros.rs#L3443-L3456
                     -((other as $unsigned_t).wrapping_sub(*self as $unsigned_t) as f64)
                 } else {
                     (*self as $unsigned_t).wrapping_sub(other as $unsigned_t) as f64

@@ -80,9 +80,9 @@ fn assert_demo() {
     let details = json!({"impossible!": {"name": "trouble", "weights": [100,200,300]}});
     assert_unreachable!("Impossible to get here", &details);
 
-    assert_always_greater_than!(3, 100, "not right", &json!({}));
+    assert_always_greater_than!(3, 100, "not right");
 
-    assert_sometimes_all!({a: true, b: false}, "not all right", &json!({}));
+    assert_sometimes_all!({a: true, b: false}, "not all right");
 }
 
 pub fn main() {
