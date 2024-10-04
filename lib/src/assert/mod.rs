@@ -14,13 +14,23 @@ use std::collections::HashMap;
 #[cfg(feature = "full")]
 use std::sync::Mutex;
 
+use self::guidance::GuidanceCatalogInfo;
+
 mod macros;
+#[doc(hidden)]
+pub mod guidance;
 
 /// Catalog of all antithesis assertions provided
 #[doc(hidden)]
 #[distributed_slice]
 #[cfg(feature = "full")]
-pub static ANTITHESIS_CATALOG: [CatalogInfo];
+pub static ANTITHESIS_CATALOG: [AssertionCatalogInfo];
+
+/// Catalog of all antithesis guidances provided
+#[doc(hidden)]
+#[distributed_slice]
+#[cfg(feature = "full")]
+pub static ANTITHESIS_GUIDANCE_CATALOG: [GuidanceCatalogInfo];
 
 // Only need an ASSET_TRACKER if there are actually assertions 'hit'
 // (i.e. encountered and invoked at runtime).
@@ -52,6 +62,21 @@ pub(crate) static INIT_CATALOG: Lazy<()> = Lazy::new(|| {
             info.id.to_owned(),
             &no_details,
         );
+    }
+    for info in ANTITHESIS_GUIDANCE_CATALOG.iter() {
+        guidance::guidance_impl(
+            info.guidance_type,
+            info.message.to_owned(),
+            info.id.to_owned(),
+            info.class.to_owned(),
+            Lazy::force(info.function).to_string(),
+            info.file.to_owned(),
+            info.begin_line,
+            info.begin_column,
+            info.maximize,
+            json!(null),
+            false,
+        )
     }
 });
 
@@ -99,7 +124,7 @@ struct AntithesisLocationInfo {
 #[doc(hidden)]
 #[derive(Debug)]
 #[cfg(feature = "full")]
-pub struct CatalogInfo {
+pub struct AssertionCatalogInfo {
     pub assert_type: AssertType,
     pub display_type: &'static str,
     pub condition: bool,

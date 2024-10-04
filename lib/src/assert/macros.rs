@@ -1,3 +1,33 @@
+#[cfg(feature = "full")]
+#[doc(hidden)]
+#[macro_export]
+macro_rules! function {
+    ($static:ident) => {
+        // Define a do-nothing function `'_f()'` within the context of
+        // the function invoking an assertion.  Then the ``type_name`` of
+        // this do-nothing will be something like:
+        //
+        //     bincrate::binmod::do_stuff::_f
+        //
+        // After trimming off the last three chars ``::_f`` what remains is
+        // the full path to the name of the function invoking the assertion
+        //
+        // The result will be stored as a lazily initialized statics in
+        // `$static`, so that it can be available at
+        // assertion catalog registration time.
+        use $crate::once_cell::sync::Lazy;
+        fn _f() {}
+        static $static: $crate::once_cell::sync::Lazy<&'static str> =
+            $crate::once_cell::sync::Lazy::new(|| {
+                fn type_name_of<T>(_: T) -> &'static str {
+                    ::std::any::type_name::<T>()
+                }
+                let name = type_name_of(_f);
+                &name[..name.len() - 4]
+            });
+    };
+}
+
 /// Common handling used by all the assertion-related macros
 #[cfg(feature = "full")]
 #[doc(hidden)]
@@ -10,29 +40,12 @@ macro_rules! assert_helper {
         let condition = $condition;
         let details = $details;
 
-        // Define a do-nothing function `'f()'` within the context of
-        // the function invoking an assertion.  Then the ``type_name`` of
-        // this do-nothing will be something like:
-        //
-        //     bincrate::binmod::do_stuff::f
-        //
-        // After trimming off the last three chars ``::f`` what remains is
-        // the full path to the name of the function invoking the assertion
-        //
-        // Both the untrimmed ``NAME`` and trimmed ``FUN_NAME`` are lazily
-        // initialized statics so that ``FUN_NAME`` can be available at
-        // assertion catalog registration time.
-        use $crate::once_cell::sync::Lazy;
-        fn f() {}
-        fn type_name_of<T>(_: T) -> &'static str {
-            ::std::any::type_name::<T>()
-        }
-        static NAME: Lazy<&'static str> = Lazy::new(|| type_name_of(f));
-        static FUN_NAME: Lazy<&'static str> = Lazy::new(|| &NAME[..NAME.len() - 3]);
+        $crate::function!(FUN_NAME);
 
+        use $crate::assert::AssertionCatalogInfo;
         #[$crate::linkme::distributed_slice($crate::assert::ANTITHESIS_CATALOG)]
         #[linkme(crate = $crate::linkme)] // Refer to our re-exported linkme.
-        static ALWAYS_CATALOG_ITEM: $crate::assert::CatalogInfo = $crate::assert::CatalogInfo {
+        static ALWAYS_CATALOG_ITEM: AssertionCatalogInfo = AssertionCatalogInfo {
             assert_type: $assert_type,
             display_type: $display_type,
             condition: false,
@@ -226,4 +239,207 @@ macro_rules! assert_unreachable {
             must_hit = false
         )
     };
+}
+
+#[cfg(feature = "full")]
+#[doc(hidden)]
+#[macro_export]
+macro_rules! guidance_helper {
+    ($guidance_type:expr, $message:literal, $maximize:literal, $guidance_data:expr) => {
+        $crate::function!(FUN_NAME);
+
+        use $crate::assert::guidance::{GuidanceCatalogInfo, GuidanceType};
+        #[$crate::linkme::distributed_slice($crate::assert::ANTITHESIS_GUIDANCE_CATALOG)]
+        #[linkme(crate = $crate::linkme)] // Refer to our re-exported linkme.
+        static GUIDANCE_CATALOG_ITEM: GuidanceCatalogInfo = GuidanceCatalogInfo {
+            guidance_type: $guidance_type,
+            message: $message,
+            id: $message,
+            class: ::std::module_path!(),
+            function: &FUN_NAME,
+            file: ::std::file!(),
+            begin_line: ::std::line!(),
+            begin_column: ::std::column!(),
+            maximize: $maximize,
+        };
+
+        $crate::assert::guidance::guidance_impl(
+            $guidance_type,
+            $message.to_owned(),
+            $message.to_owned(),
+            ::std::module_path!().to_owned(),
+            Lazy::force(&FUN_NAME).to_string(),
+            ::std::file!().to_owned(),
+            ::std::line!(),
+            ::std::column!(),
+            $maximize,
+            $guidance_data,
+            true,
+        )
+    };
+}
+
+#[cfg(feature = "full")]
+#[doc(hidden)]
+#[macro_export]
+macro_rules! numeric_guidance_helper {
+    ($assert:path, $op:tt, $maximize:literal, $left:expr, $right:expr, $message:literal, $details:expr) => {{
+        let left = $left;
+        let right = $right;
+        let mut details = $details.clone();
+        details["left"] = left.into();
+        details["right"] = right.into();
+        $assert!(left $op right, $message, &details);
+
+        let guidance_data = $crate::serde_json::json!({
+            "left": left,
+            "right": right,
+        });
+        // TODO: Right now it seems to be impossible for this macro to use the returned
+        // type of `diff` to instanciate the `T` in `Guard<T>`, which has to be
+        // explicitly provided for the static variable `GUARD`.
+        // Instead, we currently fix `T` to be `f64`, and ensure all implementations of `Diff` returns `f64`.
+        // Here are some related language limitations:
+        // - Although `typeof` is a reserved keyword in Rust, it is never implemented. See <https://stackoverflow.com/questions/64890774>.
+        // - Rust does not, and explicitly would not (see https://doc.rust-lang.org/reference/items/static-items.html#statics--generics), support generic static variable.
+        // - Type inference is not performed for static variable, i.e. `Guard<_>` is not allowed.
+        // - Some form of existential type can help, but that's only available in nightly Rust under feature `type_alias_impl_trait`.
+        //
+        // Other approaches I can think of either requires dynamic type tagging that has
+        // runtime overhead, or requires the user of the macro to explicitly provide the type,
+        // which is really not ergonomic and deviate from the APIs from other SDKs.
+        let diff = $crate::assert::guidance::Diff::diff(&left, right);
+        type Guard<T> = $crate::assert::guidance::Guard<$maximize, T>;
+        // TODO: Waiting for [type_alias_impl_trait](https://github.com/rust-lang/rust/issues/63063) to stabilize...
+        // type Distance = impl Minimal;
+        type Distance = f64;
+        static GUARD: Guard<Distance> = Guard::init();
+        if GUARD.should_emit(diff) {
+            $crate::guidance_helper!($crate::assert::guidance::GuidanceType::Numeric, $message, $maximize, guidance_data);
+        }
+    }};
+}
+
+#[cfg(not(feature = "full"))]
+#[doc(hidden)]
+#[macro_export]
+macro_rules! numeric_guidance_helper {
+    ($assert:ident, $op:tt, $maximize:literal, $left:expr, $right:expr, $message:literal, $details:expr) => {
+        assert!($left $op $right, $message, $details);
+    };
+}
+
+#[cfg(feature = "full")]
+#[doc(hidden)]
+#[macro_export]
+macro_rules! boolean_guidance_helper {
+    ($assert:path, $all:literal, {$($name:ident: $cond:expr),*}, $message:literal, $details:expr) => {{
+        let mut details = $details.clone();
+        let (cond, guidance_data) = {
+            $(let $name = $cond;)*
+            $(details[::std::stringify!($name)] = $name.into();)*
+            (
+                if $all { $($name)&&* } else { $($name)||* },
+                $crate::serde_json::json!({$(::std::stringify!($name): $name),*})
+            )
+        };
+        $assert!(cond, $message, &details);
+        $crate::guidance_helper!($crate::assert::guidance::GuidanceType::Boolean, $message, $all, guidance_data);
+    }};
+}
+
+#[cfg(not(feature = "full"))]
+#[doc(hidden)]
+#[macro_export]
+macro_rules! boolean_guidance_helper {
+    ($assert:path, $all:literal, {$($name:ident: $cond:expr),*}, $message:literal, $details:expr) => {{
+        let cond = if $all { $($name)&&* } else { $($name)||* };
+        $assert!(cond, $message, &details);
+    }};
+}
+
+/// `assert_always_greater_than(x, y, ...)` is mostly equivalent to `assert_always!(x > y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
+#[macro_export]
+macro_rules! assert_always_greater_than {
+    ($left:expr, $right:expr, $message:literal, $details:expr) => {
+        $crate::numeric_guidance_helper!($crate::assert_always, >, false, $left, $right, $message, $details)
+    };
+}
+
+/// `assert_always_greater_than_or_equal_to(x, y, ...)` is mostly equivalent to `assert_always!(x >= y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
+#[macro_export]
+macro_rules! assert_always_greater_than_or_equal_to {
+    ($left:expr, $right:expr, $message:literal, $details:expr) => {
+        $crate::numeric_guidance_helper!($crate::assert_always, >=, false, $left, $right, $message, $details)
+    };
+}
+
+/// `assert_always_less_than(x, y, ...)` is mostly equivalent to `assert_always!(x < y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
+#[macro_export]
+macro_rules! assert_always_less_than {
+    ($left:expr, $right:expr, $message:literal, $details:expr) => {
+        $crate::numeric_guidance_helper!($crate::assert_always, <, true, $left, $right, $message, $details)
+    };
+}
+
+/// `assert_always_less_than_or_equal_to(x, y, ...)` is mostly equivalent to `assert_always!(x <= y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
+#[macro_export]
+macro_rules! assert_always_less_than_or_equal_to {
+    ($left:expr, $right:expr, $message:literal, $details:expr) => {
+        $crate::numeric_guidance_helper!($crate::assert_always, <=, true, $left, $right, $message, $details)
+    };
+}
+
+/// `assert_sometimes_greater_than(x, y, ...)` is mostly equivalent to `assert_sometimes!(x > y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
+#[macro_export]
+macro_rules! assert_sometimes_greater_than {
+    ($left:expr, $right:expr, $message:literal, $details:expr) => {
+        $crate::numeric_guidance_helper!($crate::assert_sometimes, >, true, $left, $right, $message, $details)
+    };
+}
+
+/// `assert_sometimes_greater_than_or_equal_to(x, y, ...)` is mostly equivalent to `assert_sometimes!(x >= y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
+#[macro_export]
+macro_rules! assert_sometimes_greater_than_or_equal_to {
+    ($left:expr, $right:expr, $message:literal, $details:expr) => {
+        $crate::numeric_guidance_helper!($crate::assert_sometimes, >=, true, $left, $right, $message, $details)
+    };
+}
+
+/// `assert_sometimes_less_than(x, y, ...)` is mostly equivalent to `assert_sometimes!(x < y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
+#[macro_export]
+macro_rules! assert_sometimes_less_than {
+    ($left:expr, $right:expr, $message:literal, $details:expr) => {
+        $crate::numeric_guidance_helper!($crate::assert_sometimes, <, false, $left, $right, $message, $details)
+    };
+}
+
+/// `assert_sometimes_less_than_or_equal_to(x, y, ...)` is mostly equivalent to `assert_sometimes!(x <= y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
+#[macro_export]
+macro_rules! assert_sometimes_less_than_or_equal_to {
+    ($left:expr, $right:expr, $message:literal, $details:expr) => {
+        $crate::numeric_guidance_helper!($crate::assert_sometimes, <=, false, $left, $right, $message, $details)
+    };
+}
+
+/// `assert_always_some({a: x, b: y, ...})` is similar to `assert_always(x || y || ...)`, except:
+/// - Antithesis has more visibility to the individual propositions.
+/// - There is no short-circuiting, so all of `x`, `y`, ... would be evaluated.
+/// - The assertion details would be merged with `{"a": x, "b": y, ...}`.
+#[macro_export]
+macro_rules! assert_always_some {
+    ({$($name:ident: $cond:expr),*}, $message:literal, $details:expr) => {
+        $crate::boolean_guidance_helper!($crate::assert_always, false, {$($name: $cond),*}, $message, $details);
+    }
+}
+
+/// `assert_sometimes_all({a: x, b: y, ...})` is similar to `assert_sometimes(x && y && ...)`, except:
+/// - Antithesis has more visibility to the individual propositions.
+/// - There is no short-circuiting, so all of `x`, `y`, ... would be evaluated.
+/// - The assertion details would be merged with `{"a": x, "b": y, ...}`.
+#[macro_export]
+macro_rules! assert_sometimes_all {
+    ({$($name:ident: $cond:expr),*}, $message:literal, $details:expr) => {
+        $crate::boolean_guidance_helper!($crate::assert_sometimes, true, {$($name: $cond),*}, $message, $details);
+    }
 }
