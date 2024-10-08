@@ -35,10 +35,11 @@ macro_rules! function {
 macro_rules! assert_helper {
     // The handling of this pattern-arm of assert_helper
     // is wrapped in a block {} to avoid name collisions
-    (condition = $condition:expr, $message:literal, $details:expr, $assert_type:path, $display_type:literal, must_hit = $must_hit:literal) => {{
+    (condition = $condition:expr, $message:literal, $(details = $details:expr)?, $assert_type:path, $display_type:literal, must_hit = $must_hit:literal) => {{
         // Force evaluation of expressions.
         let condition = $condition;
-        let details = $details;
+        let details = &$crate::serde_json::json!({});
+        $(let details = $details;)?
 
         $crate::function!(FUN_NAME);
 
@@ -109,15 +110,23 @@ macro_rules! assert_helper {
 /// ```
 #[macro_export]
 macro_rules! assert_always {
-    ($condition:expr, $message:literal, $details:expr) => {
+    ($condition:expr, $message:literal$(, $details:expr)?) => {
         $crate::assert_helper!(
             condition = $condition,
             $message,
-            $details,
+            $(details = $details)?,
             $crate::assert::AssertType::Always,
             "Always",
             must_hit = true
         )
+    };
+    ($($rest:tt)*) => {
+        ::std::compile_error!(
+r#"Invalid syntax when calling macro `assert_always`.
+Example usage:
+    `assert_always!(condition_expr, "assertion message (static literal)", &details_json_value_expr)`
+"#
+        );
     };
 }
 
@@ -137,15 +146,23 @@ macro_rules! assert_always {
 /// ```
 #[macro_export]
 macro_rules! assert_always_or_unreachable {
-    ($condition:expr, $message:literal, $details:expr) => {
+    ($condition:expr, $message:literal$(, $details:expr)?) => {
         $crate::assert_helper!(
             condition = $condition,
             $message,
-            $details,
+            $(details = $details)?,
             $crate::assert::AssertType::Always,
             "AlwaysOrUnreachable",
             must_hit = false
         )
+    };
+    ($($rest:tt)*) => {
+        ::std::compile_error!(
+r#"Invalid syntax when calling macro `assert_always_or_unreachable`.
+Example usage:
+    `assert_always_or_unreachable!(condition_expr, "assertion message (static literal)", &details_json_value_expr)`
+"#
+        );
     };
 }
 
@@ -166,15 +183,23 @@ macro_rules! assert_always_or_unreachable {
 /// ```
 #[macro_export]
 macro_rules! assert_sometimes {
-    ($condition:expr, $message:literal, $details:expr) => {
+    ($condition:expr, $message:literal$(, $details:expr)?) => {
         $crate::assert_helper!(
             condition = $condition,
             $message,
-            $details,
+            $(details = $details)?,
             $crate::assert::AssertType::Sometimes,
             "Sometimes",
             must_hit = true
         )
+    };
+    ($($rest:tt)*) => {
+        ::std::compile_error!(
+r#"Invalid syntax when calling macro `assert_sometimes`.
+Example usage:
+    `assert_sometimes!(condition_expr, "assertion message (static literal)", &details_json_value_expr)`
+"#
+        );
     };
 }
 
@@ -197,15 +222,23 @@ macro_rules! assert_sometimes {
 /// ```
 #[macro_export]
 macro_rules! assert_reachable {
-    ($message:literal, $details:expr) => {
+    ($message:literal$(, $details:expr)?) => {
         $crate::assert_helper!(
             condition = true,
             $message,
-            $details,
+            $(details = $details)?,
             $crate::assert::AssertType::Reachability,
             "Reachable",
             must_hit = true
         )
+    };
+    ($($rest:tt)*) => {
+        ::std::compile_error!(
+r#"Invalid syntax when calling macro `assert_reachable`.
+Example usage:
+    `assert_reachable!("assertion message (static literal)", &details_json_value_expr)`
+"#
+        );
     };
 }
 
@@ -229,15 +262,23 @@ macro_rules! assert_reachable {
 /// ```
 #[macro_export]
 macro_rules! assert_unreachable {
-    ($message:literal, $details:expr) => {
+    ($message:literal$(, $details:expr)?) => {
         $crate::assert_helper!(
             condition = false,
             $message,
-            $details,
+            $(details = $details)?,
             $crate::assert::AssertType::Reachability,
             "Unreachable",
             must_hit = false
         )
+    };
+    ($($rest:tt)*) => {
+        ::std::compile_error!(
+r#"Invalid syntax when calling macro `assert_unreachable`.
+Example usage:
+    `assert_unreachable!("assertion message (static literal)", &details_json_value_expr)`
+"#
+        );
     };
 }
 
@@ -283,10 +324,12 @@ macro_rules! guidance_helper {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! numeric_guidance_helper {
-    ($assert:path, $op:tt, $maximize:literal, $left:expr, $right:expr, $message:literal, $details:expr) => {{
+    ($assert:path, $op:tt, $maximize:literal, $left:expr, $right:expr, $message:literal$(, $details:expr)?) => {{
         let left = $left;
         let right = $right;
-        let mut details = $details.clone();
+        let details = &$crate::serde_json::json!({});
+        $(let details = $details;)?
+        let mut details = details.clone();
         details["left"] = left.into();
         details["right"] = right.into();
         $assert!(left $op right, $message, &details);
@@ -324,8 +367,8 @@ macro_rules! numeric_guidance_helper {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! numeric_guidance_helper {
-    ($assert:ident, $op:tt, $maximize:literal, $left:expr, $right:expr, $message:literal, $details:expr) => {
-        assert!($left $op $right, $message, $details);
+    ($assert:ident, $op:tt, $maximize:literal, $left:expr, $right:expr, $message:literal$(, $details:expr)?) => {
+        assert!($left $op $right, $message$(, $details)?);
     };
 }
 
@@ -333,13 +376,15 @@ macro_rules! numeric_guidance_helper {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! boolean_guidance_helper {
-    ($assert:path, $all:literal, {$($name:ident: $cond:expr),*}, $message:literal, $details:expr) => {{
-        let mut details = $details.clone();
+    ($assert:path, $all:literal, {$($name:ident: $cond:expr),*}, $message:literal$(, $details:expr)?) => {{
+        let details = &$crate::serde_json::json!({});
+        $(let details = $details;)?
+        let mut details = details.clone();
         let (cond, guidance_data) = {
             $(let $name = $cond;)*
             $(details[::std::stringify!($name)] = $name.into();)*
             (
-                if $all { $($name)&&* } else { $($name)||* },
+                if $all { true $(&& $name)* } else { false $(|| $name)* },
                 $crate::serde_json::json!({$(::std::stringify!($name): $name),*})
             )
         };
@@ -352,73 +397,137 @@ macro_rules! boolean_guidance_helper {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! boolean_guidance_helper {
-    ($assert:path, $all:literal, {$($name:ident: $cond:expr),*}, $message:literal, $details:expr) => {{
-        let cond = if $all { $($name)&&* } else { $($name)||* };
-        $assert!(cond, $message, &details);
+    ($assert:path, $all:literal, {$($name:ident: $cond:expr),*}, $message:literal$(, $details:expr)?) => {{
+        let cond = if $all { true $(&& $name)* } else { false $(|| $name)* },
+        $assert!(cond, $message$(, &$details)?);
     }};
 }
 
 /// `assert_always_greater_than(x, y, ...)` is mostly equivalent to `assert_always!(x > y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
 #[macro_export]
 macro_rules! assert_always_greater_than {
-    ($left:expr, $right:expr, $message:literal, $details:expr) => {
-        $crate::numeric_guidance_helper!($crate::assert_always, >, false, $left, $right, $message, $details)
+    ($left:expr, $right:expr, $message:literal$(, $details:expr)?) => {
+        $crate::numeric_guidance_helper!($crate::assert_always, >, false, $left, $right, $message$(, $details)?)
+    };
+    ($($rest:tt)*) => {
+        ::std::compile_error!(
+r#"Invalid syntax when calling macro `assert_always_greater_than`.
+Example usage:
+    `assert_always_greater_than!(left_expr, right_expr, "assertion message (static literal)", &details_json_value_expr)`
+"#
+        );
     };
 }
 
 /// `assert_always_greater_than_or_equal_to(x, y, ...)` is mostly equivalent to `assert_always!(x >= y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
 #[macro_export]
 macro_rules! assert_always_greater_than_or_equal_to {
-    ($left:expr, $right:expr, $message:literal, $details:expr) => {
+    ($left:expr, $right:expr, $message:literal$(, $details:expr)?) => {
         $crate::numeric_guidance_helper!($crate::assert_always, >=, false, $left, $right, $message, $details)
+    };
+    ($($rest:tt)*) => {
+        ::std::compile_error!(
+r#"Invalid syntax when calling macro `assert_always_greater_than_or_equal_to`.
+Example usage:
+    `assert_always_greater_than_or_equal_to!(left_expr, right_expr, "assertion message (static literal)", &details_json_value_expr)`
+"#
+        );
     };
 }
 
 /// `assert_always_less_than(x, y, ...)` is mostly equivalent to `assert_always!(x < y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
 #[macro_export]
 macro_rules! assert_always_less_than {
-    ($left:expr, $right:expr, $message:literal, $details:expr) => {
+    ($left:expr, $right:expr, $message:literal$(, $details:expr)?) => {
         $crate::numeric_guidance_helper!($crate::assert_always, <, true, $left, $right, $message, $details)
+    };
+    ($($rest:tt)*) => {
+        ::std::compile_error!(
+r#"Invalid syntax when calling macro `assert_always_less_than`.
+Example usage:
+    `assert_always_less_than!(left_expr, right_expr, "assertion message (static literal)", &details_json_value_expr)`
+"#
+        );
     };
 }
 
 /// `assert_always_less_than_or_equal_to(x, y, ...)` is mostly equivalent to `assert_always!(x <= y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
 #[macro_export]
 macro_rules! assert_always_less_than_or_equal_to {
-    ($left:expr, $right:expr, $message:literal, $details:expr) => {
+    ($left:expr, $right:expr, $message:literal$(, $details:expr)?) => {
         $crate::numeric_guidance_helper!($crate::assert_always, <=, true, $left, $right, $message, $details)
+    };
+    ($($rest:tt)*) => {
+        ::std::compile_error!(
+r#"Invalid syntax when calling macro `assert_always_less_than_or_equal_to`.
+Example usage:
+    `assert_always_less_than_or_equal_to!(left_expr, right_expr, "assertion message (static literal)", &details_json_value_expr)`
+"#
+        );
     };
 }
 
 /// `assert_sometimes_greater_than(x, y, ...)` is mostly equivalent to `assert_sometimes!(x > y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
 #[macro_export]
 macro_rules! assert_sometimes_greater_than {
-    ($left:expr, $right:expr, $message:literal, $details:expr) => {
+    ($left:expr, $right:expr, $message:literal$(, $details:expr)?) => {
         $crate::numeric_guidance_helper!($crate::assert_sometimes, >, true, $left, $right, $message, $details)
+    };
+    ($($rest:tt)*) => {
+        ::std::compile_error!(
+r#"Invalid syntax when calling macro `assert_sometimes_greater_than`.
+Example usage:
+    `assert_sometimes_greater_than!(left_expr, right_expr, "assertion message (static literal)", &details_json_value_expr)`
+"#
+        );
     };
 }
 
 /// `assert_sometimes_greater_than_or_equal_to(x, y, ...)` is mostly equivalent to `assert_sometimes!(x >= y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
 #[macro_export]
 macro_rules! assert_sometimes_greater_than_or_equal_to {
-    ($left:expr, $right:expr, $message:literal, $details:expr) => {
+    ($left:expr, $right:expr, $message:literal$(, $details:expr)?) => {
         $crate::numeric_guidance_helper!($crate::assert_sometimes, >=, true, $left, $right, $message, $details)
+    };
+    ($($rest:tt)*) => {
+        ::std::compile_error!(
+r#"Invalid syntax when calling macro `assert_sometimes_greater_than_or_equal_to`.
+Example usage:
+    `assert_sometimes_greater_than_or_equal_to!(left_expr, right_expr, "assertion message (static literal)", &details_json_value_expr)`
+"#
+        );
     };
 }
 
 /// `assert_sometimes_less_than(x, y, ...)` is mostly equivalent to `assert_sometimes!(x < y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
 #[macro_export]
 macro_rules! assert_sometimes_less_than {
-    ($left:expr, $right:expr, $message:literal, $details:expr) => {
+    ($left:expr, $right:expr, $message:literal$(, $details:expr)?) => {
         $crate::numeric_guidance_helper!($crate::assert_sometimes, <, false, $left, $right, $message, $details)
+    };
+    ($($rest:tt)*) => {
+        ::std::compile_error!(
+r#"Invalid syntax when calling macro `assert_sometimes_less_than`.
+Example usage:
+    `assert_sometimes_less_than!(left_expr, right_expr, "assertion message (static literal)", &details_json_value_expr)`
+"#
+        );
     };
 }
 
 /// `assert_sometimes_less_than_or_equal_to(x, y, ...)` is mostly equivalent to `assert_sometimes!(x <= y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
 #[macro_export]
 macro_rules! assert_sometimes_less_than_or_equal_to {
-    ($left:expr, $right:expr, $message:literal, $details:expr) => {
+    ($left:expr, $right:expr, $message:literal$(, $details:expr)?) => {
         $crate::numeric_guidance_helper!($crate::assert_sometimes, <=, false, $left, $right, $message, $details)
+    };
+    ($($rest:tt)*) => {
+        ::std::compile_error!(
+r#"Invalid syntax when calling macro `assert_sometimes_less_than_or_equal_to`.
+Example usage:
+    `assert_sometimes_less_than_or_equal_to!(left_expr, right_expr, "assertion message (static literal)", &details_json_value_expr)`
+"#
+        );
     };
 }
 
@@ -428,9 +537,17 @@ macro_rules! assert_sometimes_less_than_or_equal_to {
 /// - The assertion details would be merged with `{"a": x, "b": y, ...}`.
 #[macro_export]
 macro_rules! assert_always_some {
-    ({$($name:ident: $cond:expr),*}, $message:literal, $details:expr) => {
-        $crate::boolean_guidance_helper!($crate::assert_always, false, {$($name: $cond),*}, $message, $details);
-    }
+    ({$($($name:ident: $cond:expr),+ $(,)?)?}, $message:literal$(, $details:expr)?) => {
+        $crate::boolean_guidance_helper!($crate::assert_always, false, {$($($name: $cond),+)?}, $message$(, $details)?);
+    };
+    ($($rest:tt)*) => {
+        ::std::compile_error!(
+r#"Invalid syntax when calling macro `assert_always_some`.
+Example usage:
+    `assert_always_some!({field1: cond1, field2: cond2, ...}, "assertion message (static literal)", &details_json_value_expr)`
+"#
+        );
+    };
 }
 
 /// `assert_sometimes_all({a: x, b: y, ...})` is similar to `assert_sometimes(x && y && ...)`, except:
@@ -439,7 +556,15 @@ macro_rules! assert_always_some {
 /// - The assertion details would be merged with `{"a": x, "b": y, ...}`.
 #[macro_export]
 macro_rules! assert_sometimes_all {
-    ({$($name:ident: $cond:expr),*}, $message:literal, $details:expr) => {
-        $crate::boolean_guidance_helper!($crate::assert_sometimes, true, {$($name: $cond),*}, $message, $details);
-    }
+    ({$($($name:ident: $cond:expr),+ $(,)?)?}, $message:literal$(, $details:expr)?) => {
+        $crate::boolean_guidance_helper!($crate::assert_sometimes, true, {$($($name: $cond),+)?}, $message$(, $details)?);
+    };
+    ($($rest:tt)*) => {
+        ::std::compile_error!(
+r#"Invalid syntax when calling macro `assert_sometimes_all`.
+Example usage:
+    `assert_sometimes_all!({field1: cond1, field2: cond2, ...}, "assertion message (static literal)", &details_json_value_expr)`
+"#
+        );
+    };
 }
