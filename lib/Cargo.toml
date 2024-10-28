@@ -9,7 +9,7 @@ keywords = ["antithesis", "testing", "fuzzing", "quality"]
 categories= ["development-tools::testing"] # https://crates.io/category_slugs
 repository = "https://github.com/antithesishq/antithesis-sdk-rust"
 homepage = "https://github.com/antithesishq/antithesis-sdk-rust"
-documentation = "https://antithesis.com/docs/using_antithesis/sdk/rust/overview.html"
+documentation = "https://antithesis.com/docs/using_antithesis/sdk/rust/overview/"
 description = """
 Rust SDK for the Antithesis autonomous software testing platform.
 """

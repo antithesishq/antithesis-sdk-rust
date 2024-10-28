@@ -261,7 +261,7 @@ impl AssertionInfo {
 /// of the ``hit`` parameter to false.
 ///
 /// Please refer to the general Antithesis documentation regarding the
-/// use of the [Fallback SDK](https://antithesis.com/docs/using_antithesis/sdk/fallback/assert.html)
+/// use of the [Fallback SDK](https://antithesis.com/docs/using_antithesis/sdk/fallback/assert/)
 /// for additional information.
 ///
 ///
