@@ -1,3 +1,4 @@
+use rand::{Error, RngCore};
 use crate::internal;
 
 /// Returns a u64 value chosen by Antithesis. You should not
@@ -42,6 +43,39 @@ pub fn random_choice<T>(slice: &[T]) -> Option<&T> {
             let idx: usize = (get_random() as usize) % slice.len();
             Some(&slice[idx])
         }
+    }
+}
+
+pub struct AntithesisRng;
+
+impl RngCore for AntithesisRng {
+    fn next_u32(&mut self) -> u32 {
+        get_random() as u32
+    }
+
+    fn next_u64(&mut self) -> u64 {
+        get_random()
+    }
+
+    fn fill_bytes(&mut self, dest: &mut [u8]) {
+        let mut chunks = dest.chunks_exact_mut(8);
+
+        for chunk in chunks.by_ref() {
+            let random_bytes = self.next_u64().to_le_bytes();
+            chunk.copy_from_slice(&random_bytes);
+        }
+
+        let remainder = chunks.into_remainder();
+
+        if !remainder.is_empty() {
+            let random_bytes = self.next_u64().to_le_bytes();
+            remainder.copy_from_slice(&random_bytes[..remainder.len()]);
+        }
+    }
+
+    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Error> {
+        self.fill_bytes(dest);
+        Ok(())
     }
 }
 

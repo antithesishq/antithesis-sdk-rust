@@ -198,14 +198,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "simple"
-version = "0.1.0"
-dependencies = [
- "antithesis_sdk",
- "serde_json",
-]
-
-[[package]]
 name = "syn"
 version = "2.0.57"
 source = "registry+https://github.com/rust-lang/crates.io-index"
