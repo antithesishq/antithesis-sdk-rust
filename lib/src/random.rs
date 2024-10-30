@@ -55,11 +55,12 @@ pub fn random_choice<T>(slice: &[T]) -> Option<&T> {
 ///
 /// ```
 /// use antithesis_sdk::random::AntithesisRng;
-/// use rand::RngCore;
+/// use rand::{Rng, RngCore};
 ///
 /// let mut rng = AntithesisRng;
-/// let random_u32 = rng.next_u32();
-/// let random_u64 = rng.next_u64();
+/// let random_u32: u32 = rng.gen();
+/// let random_u64: u64 = rng.gen();
+/// let random_char: char = rng.gen();
 ///
 /// let mut bytes = [0u8; 16];
 /// rng.fill_bytes(&mut bytes);
