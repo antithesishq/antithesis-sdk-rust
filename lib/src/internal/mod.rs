@@ -43,7 +43,7 @@ struct AntithesisSDKInfo {
 
 // Hardly ever changes, refers to the underlying JSON representation
 #[allow(dead_code)]
-const PROTOCOL_VERSION: &str = "1.0.0";
+const PROTOCOL_VERSION: &str = "1.1.0";
 
 // Tracks SDK releases
 #[allow(dead_code)]

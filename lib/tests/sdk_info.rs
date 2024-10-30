@@ -38,7 +38,7 @@ fn sdk_info() {
         Ok(x) => {
             for obj in x.iter() {
                 if let SDKInput::AntithesisSdk(sdk) = obj {
-                    assert_eq!(sdk.protocol_version, "1.0.0");
+                    assert_eq!(sdk.protocol_version, "1.1.0");
                     assert_eq!(sdk.language.name, "Rust")
                 }
             }
