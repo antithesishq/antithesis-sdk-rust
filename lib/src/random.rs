@@ -1,3 +1,4 @@
+use rand::{Error, RngCore};
 use crate::internal;
 
 /// Returns a u64 value chosen by Antithesis. You should not
@@ -45,10 +46,71 @@ pub fn random_choice<T>(slice: &[T]) -> Option<&T> {
     }
 }
 
+/// A random number generator that uses Antithesis's random number generation.
+///
+/// This implements the `RngCore` trait from the `rand` crate, allowing it to be used
+/// with any code that expects a random number generator from that ecosystem.
+///
+/// # Example
+///
+/// ```
+/// use antithesis_sdk::random::AntithesisRng;
+/// use rand::RngCore;
+///
+/// let mut rng = AntithesisRng;
+/// let random_u32 = rng.next_u32();
+/// let random_u64 = rng.next_u64();
+///
+/// let mut bytes = [0u8; 16];
+/// rng.fill_bytes(&mut bytes);
+/// ```
+pub struct AntithesisRng;
+
+impl RngCore for AntithesisRng {
+    fn next_u32(&mut self) -> u32 {
+        get_random() as u32
+    }
+
+    fn next_u64(&mut self) -> u64 {
+        get_random()
+    }
+
+    fn fill_bytes(&mut self, dest: &mut [u8]) {
+        // Split the destination buffer into chunks of 8 bytes each
+        // (since we'll fill each chunk with a u64/8 bytes of random data)
+        let mut chunks = dest.chunks_exact_mut(8);
+
+        // Fill each complete 8-byte chunk with random bytes
+        for chunk in chunks.by_ref() {
+            // Generate 8 random bytes from a u64 in native endian order
+            let random_bytes = self.next_u64().to_ne_bytes();
+            // Copy those random bytes into this chunk
+            chunk.copy_from_slice(&random_bytes);
+        }
+
+        // Get any remaining bytes that didn't fit in a complete 8-byte chunk
+        let remainder = chunks.into_remainder();
+
+        if !remainder.is_empty() {
+            // Generate 8 more random bytes
+            let random_bytes = self.next_u64().to_ne_bytes();
+            // Copy just enough random bytes to fill the remainder
+            remainder.copy_from_slice(&random_bytes[..remainder.len()]);
+        }
+    }
+
+    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Error> {
+        self.fill_bytes(dest);
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::collections::{HashMap, HashSet};
+    use rand::Rng;
+    use rand::seq::SliceRandom;
 
     #[test]
     fn random_choice_no_choices() {
@@ -93,6 +155,58 @@ mod tests {
         let mut random_numbers: HashSet<u64> = HashSet::new();
         for _i in 0..100000 {
             let rn = get_random();
+            assert!(!random_numbers.contains(&rn));
+            random_numbers.insert(rn);
+        }
+    }
+
+    #[test]
+    fn rng_no_choices() {
+        let mut rng = AntithesisRng;
+        let array = [""; 0];
+        assert_eq!(0, array.len());
+        assert_eq!(None, array.choose(&mut rng));
+    }
+
+    #[test]
+    fn rng_one_choice() {
+        let mut rng = AntithesisRng;
+        let array = ["ABc"; 1];
+        assert_eq!(1, array.len());
+        assert_eq!(Some(&"ABc"), array.choose(&mut rng));
+    }
+
+    #[test]
+    fn rng_few_choices() {
+        let mut rng = AntithesisRng;
+        // For each map key, the value is the count of the number of
+        // random_choice responses received matching that key
+        let mut counted_items: HashMap<&str, i64> = HashMap::new();
+        counted_items.insert("a", 0);
+        counted_items.insert("b", 0);
+        counted_items.insert("c", 0);
+
+        let all_keys: Vec<&str> = counted_items.keys().cloned().collect();
+        assert_eq!(counted_items.len(), all_keys.len());
+        for _i in 0..15 {
+            let rc = all_keys.choose(&mut rng);
+            if let Some(choice) = rc {
+                if let Some(x) = counted_items.get_mut(choice) {
+                    *x += 1;
+                }
+            }
+        }
+        for (key, val) in counted_items.iter() {
+            assert_ne!(*val, 0, "Did not produce the choice: {}", key);
+        }
+    }
+
+    #[test]
+    fn rng_100k() {
+        let mut rng = AntithesisRng;
+        let mut random_numbers: HashSet<u64> = HashSet::new();
+        for _i in 0..100000 {
+            let rn: u64 = rng.gen();
             assert!(!random_numbers.contains(&rn));
             random_numbers.insert(rn);
         }
