@@ -71,6 +71,8 @@ pub fn send_event(name: &str, details: &Value) {
     internal::dispatch_output(&json_event)
 }
 
+mod tracing;
+
 #[cfg(test)]
 mod tests {
     use super::*;
