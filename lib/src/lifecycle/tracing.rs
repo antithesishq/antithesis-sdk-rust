@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use serde::Serialize;
+use serde::{ser::SerializeMap, Serialize, Serializer};
 use serde_json::Value;
 use tracing_core::{field, span, Event, Subscriber};
 use tracing_subscriber::{layer::Context, registry::LookupSpan, Layer};
@@ -33,28 +33,87 @@ where S: Subscriber + for<'a> LookupSpan<'a> {
     }
 
     fn on_event(&self, event: &Event<'_>, ctx: Context<'_, S>) {
-        // TODO: Use streaming JSON serialization to eliminate intermediate data structures
-        // and cloning? Might complicates implementation.
-        let mut values = BTreeMap::new();
-        event.record(&mut JsonVisitor::with(&mut values));
-        let spans = ctx.event_scope(event).map(|scope| {
-            scope.from_root().filter_map(|span| {
-                let extensions = span.extensions();
-                let SpanValues(values) = extensions.get()?;
-                Some(values.clone())
-            }).collect::<Vec<_>>()
-        });
-
         #[derive(Serialize)]
+        #[serde(bound = "R: Subscriber + for<'l> LookupSpan<'l>")]
         #[serde(rename_all = "snake_case")]
-        enum Event {
+        enum SerializeEvent<'a, 'b, R> {
             TracingEvent {
-                spans: Option<Vec<BTreeMap<&'static str, Value>>>,
-                #[serde(flatten)]
-                values: BTreeMap<&'static str, Value>,
+                level: &'a str,
+                target: &'a str,
+                spans: SerializeScope<'a, 'b, R>,
+                fields: SerializeValues<'a, 'b>,
             }
         }
-        crate::internal::dispatch_output(&Event::TracingEvent { values, spans });
+        let meta = event.metadata();
+        let level = meta.level().as_str();
+        let target = meta.target();
+        let spans = SerializeScope(ctx, event);
+        let fields = SerializeValues(event);
+        crate::internal::dispatch_output(&SerializeEvent::TracingEvent { level, target, fields, spans });
+
+        struct SerializeValues<'a, 'b>(&'a tracing_core::Event<'b>);
+        impl<'a, 'b> Serialize for SerializeValues<'a, 'b> {
+            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+            where S: Serializer {
+                let mut serializer = serializer.serialize_map(None)?;
+                self.0.record(&mut SerializeVisitor(&mut serializer));
+                serializer.end()
+            }
+        }
+
+        struct SerializeVisitor<'a, S>(&'a mut S);
+        impl<'a, S: SerializeMap> field::Visit for SerializeVisitor<'a, S> {
+            fn record_f64(&mut self, field: &field::Field, value: f64) {
+                let _ = self.0.serialize_entry(field.name(), &value);
+            }
+
+            fn record_i64(&mut self, field: &field::Field, value: i64) {
+                let _ = self.0.serialize_entry(field.name(), &value);
+            }
+
+            fn record_u64(&mut self, field: &field::Field, value: u64) {
+                let _ = self.0.serialize_entry(field.name(), &value);
+            }
+
+            fn record_i128(&mut self, field: &field::Field, value: i128) {
+                let _ = self.0.serialize_entry(field.name(), &value);
+            }
+
+            fn record_u128(&mut self, field: &field::Field, value: u128) {
+                let _ = self.0.serialize_entry(field.name(), &value);
+            }
+
+            fn record_bool(&mut self, field: &field::Field, value: bool) {
+                let _ = self.0.serialize_entry(field.name(), &value);
+            }
+
+            fn record_str(&mut self, field: &field::Field, value: &str) {
+                let _ = self.0.serialize_entry(field.name(), &value);
+            }
+
+            fn record_debug(&mut self, field: &field::Field, value: &dyn std::fmt::Debug) {
+                let _ = self.0.serialize_entry(field.name(), &format!("{:?}", value));
+            }
+        }
+
+        struct SerializeScope<'a, 'b, R>(Context<'a, R>, &'a tracing_core::Event<'b>);
+        impl<'a, 'b, R> Serialize for SerializeScope<'a, 'b, R>
+        where for<'l> R: Subscriber + LookupSpan<'l> {
+            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+            where S: Serializer {
+                use serde::ser::SerializeSeq;
+                let SerializeScope(ctx, event) = self;
+                let mut serializer = serializer.serialize_seq(None)?;
+                if let Some(scope) = ctx.event_scope(event) {
+                    for span in scope.from_root() {
+                        if let Some(SpanValues(values)) = span.extensions().get() {
+                            serializer.serialize_element(values)?;
+                        }
+                    }
+                }
+                serializer.end()
+            }
+        }
     }
 }
 
