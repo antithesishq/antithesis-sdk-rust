@@ -130,6 +130,42 @@ Example usage:
     };
 }
 
+/// Assert that ``condition`` is false every time this function is called, **and** that it is
+/// called at least once. The corresponding test property will be viewable in the ``Antithesis SDK: Always`` group of your triage report.
+///
+/// # Example
+///
+/// ```
+/// use serde_json::{json};
+/// use antithesis_sdk::{assert_never, random};
+///
+/// const MAX_ALLOWED: u64 = 100;
+/// let actual = random::get_random() % 100u64;
+/// let details = json!({"max_allowed": MAX_ALLOWED, "actual": actual});
+/// antithesis_sdk::assert_never!(actual >= MAX_ALLOWED, "Value never exceeds max", &details);
+/// ```
+#[macro_export]
+macro_rules! assert_never {
+    ($condition:expr, $message:literal$(, $details:expr)?) => {
+        $crate::assert_helper!(
+            condition = !($condition),
+            $message,
+            $(details = $details)?,
+            $crate::assert::AssertType::Always,
+            "Always",
+            must_hit = true
+        )
+    };
+    ($($rest:tt)*) => {
+        ::std::compile_error!(
+r#"Invalid syntax when calling macro `assert_never`.
+Example usage:
+    `assert_never!(condition_expr, "assertion message (static literal)", &details_json_value_expr)`
+"#
+        );
+    };
+}
+
 /// Assert that ``condition`` is true every time this function is called. The corresponding test property will pass even if the assertion is never encountered.
 /// This test property will be viewable in the ``Antithesis SDK: Always`` group of your triage report.
 ///
