@@ -34,7 +34,8 @@
           });
           workspaceEmptyFeature = version: (craneLib version).buildPackage (commonArgs // {
             cargoArtifacts = workspaceDeps version;
-            cargoClippyExtraArgs = "--no-default-features";
+            cargoExtraArgs = "--no-default-features"; # Disable the default `full` feature for builds.
+            cargoTestExtraArgs = "-F full"; # But enable the `full` feature when running `cargo test`.
           });
           clippy = version: (craneLib version).cargoClippy (commonArgs // {
             cargoArtifacts = workspaceDeps version;
