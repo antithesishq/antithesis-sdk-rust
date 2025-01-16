@@ -32,6 +32,10 @@
           workspace = version: (craneLib version).buildPackage (commonArgs // {
             cargoArtifacts = workspaceDeps version;
           });
+          workspaceEmptyFeature = version: (craneLib version).buildPackage (commonArgs // {
+            cargoArtifacts = workspaceDeps version;
+            cargoClippyExtraArgs = "--no-default-features";
+          });
           clippy = version: (craneLib version).cargoClippy (commonArgs // {
             cargoArtifacts = workspaceDeps version;
             cargoClippyExtraArgs = "--all-targets -- -D warnings";
@@ -47,6 +51,7 @@
           inherit craneLib workspaceDeps;
           antithesis-sdk-rust = {
             workspace = workspace "nightly";
+            workspaceEmptyFeature = workspaceEmptyFeature "nightly";
             workspaceMSRV = workspace (lib.importTOML ./lib/Cargo.toml).package.rust-version;
             clippy = clippy "nightly";
             test = test "nightly";
@@ -71,9 +76,9 @@
       packages = with pkgs; [ rust-analyzer cargo-msrv ];
     };
 
-    # TODO: Check combinations of feature flags & semver check.
+    # TODO: Perform semver check.
     checks = { antithesis-sdk-rust, ... }: {
-      inherit (antithesis-sdk-rust) workspaceMSRV clippy test;
+      inherit (antithesis-sdk-rust) workspaceMSRV workspaceEmptyFeature clippy test;
     };
 
     # TODO: Decide whether we want auto formatting.
