@@ -84,13 +84,13 @@ macro_rules! assert_helper {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! assert_helper {
-    (condition = $condition:expr, $message:literal, $details:expr, $assert_type:path, $display_type:literal, must_hit = $must_hit:literal) => {{
+    (condition = $condition:expr, $message:literal, $(details = $details:expr)?, $assert_type:path, $display_type:literal, must_hit = $must_hit:literal) => {{
         // Force evaluation of expressions, ensuring that
         // any side effects of these expressions will always be
         // evaluated at runtime - even if the assertion itself
         // is supressed by the `no-antithesis-sdk` feature
         let condition = $condition;
-        let details = $details;
+        $(let details = $details;)?
     }};
 }
 
@@ -367,7 +367,7 @@ macro_rules! numeric_guidance_helper {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! numeric_guidance_helper {
-    ($assert:ident, $op:tt, $maximize:literal, $left:expr, $right:expr, $message:literal$(, $details:expr)?) => {
+    ($assert:path, $op:tt, $maximize:literal, $left:expr, $right:expr, $message:literal$(, $details:expr)?) => {
         assert!($left $op $right, $message$(, $details)?);
     };
 }
@@ -398,8 +398,11 @@ macro_rules! boolean_guidance_helper {
 #[macro_export]
 macro_rules! boolean_guidance_helper {
     ($assert:path, $all:literal, {$($name:ident: $cond:expr),*}, $message:literal$(, $details:expr)?) => {{
-        let cond = if $all { true $(&& $name)* } else { false $(|| $name)* },
-        $assert!(cond, $message$(, &$details)?);
+        let cond = {
+            $(let $name = $cond;)*
+            if $all { true $(&& $name)* } else { false $(|| $name)* }
+        };
+        $assert!(cond, $message$(, $details)?);
     }};
 }
 

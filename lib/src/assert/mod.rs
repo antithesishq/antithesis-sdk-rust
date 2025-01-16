@@ -14,10 +14,9 @@ use std::collections::HashMap;
 #[cfg(feature = "full")]
 use std::sync::Mutex;
 
-use self::guidance::GuidanceCatalogInfo;
-
 mod macros;
 #[doc(hidden)]
+#[cfg(feature = "full")]
 pub mod guidance;
 
 /// Catalog of all antithesis assertions provided
@@ -30,7 +29,7 @@ pub static ANTITHESIS_CATALOG: [AssertionCatalogInfo];
 #[doc(hidden)]
 #[distributed_slice]
 #[cfg(feature = "full")]
-pub static ANTITHESIS_GUIDANCE_CATALOG: [GuidanceCatalogInfo];
+pub static ANTITHESIS_GUIDANCE_CATALOG: [self::guidance::GuidanceCatalogInfo];
 
 // Only need an ASSET_TRACKER if there are actually assertions 'hit'
 // (i.e. encountered and invoked at runtime).
