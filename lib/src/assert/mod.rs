@@ -5,19 +5,19 @@ use linkme::distributed_slice;
 #[cfg(feature = "full")]
 use once_cell::sync::Lazy;
 use serde::Serialize;
-use serde_json::Value;
 #[cfg(feature = "full")]
 use serde_json::json;
+use serde_json::Value;
 
 #[cfg(feature = "full")]
 use std::collections::HashMap;
 #[cfg(feature = "full")]
 use std::sync::Mutex;
 
-mod macros;
 #[doc(hidden)]
 #[cfg(feature = "full")]
 pub mod guidance;
+mod macros;
 
 /// Catalog of all antithesis assertions provided
 #[doc(hidden)]
@@ -137,7 +137,7 @@ pub struct AssertionCatalogInfo {
 }
 
 #[derive(Serialize, Debug)]
-struct AssertionInfo {
+struct AssertionInfo<'a> {
     assert_type: AssertType,
     display_type: String,
     condition: bool,
@@ -146,10 +146,10 @@ struct AssertionInfo {
     hit: bool,
     must_hit: bool,
     id: String,
-    details: Value,
+    details: &'a Value,
 }
 
-impl AssertionInfo {
+impl<'a> AssertionInfo<'a> {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         assert_type: AssertType,
@@ -164,7 +164,7 @@ impl AssertionInfo {
         hit: bool,
         must_hit: bool,
         id: String,
-        details: &Value,
+        details: &'a Value,
     ) -> Self {
         let location = AntithesisLocationInfo {
             class,
@@ -183,13 +183,13 @@ impl AssertionInfo {
             hit,
             must_hit,
             id,
-            details: details.clone(),
+            details,
         }
     }
-} 
+}
 
 #[cfg(feature = "full")]
-impl AssertionInfo {
+impl AssertionInfo<'_> {
     // AssertionInfo::track_entry() determines if the assertion should
     // actually be emitted:
     //
@@ -240,12 +240,11 @@ impl AssertionInfo {
 }
 
 #[cfg(not(feature = "full"))]
-impl AssertionInfo {
+impl AssertionInfo<'_> {
     fn track_entry(&self) {
-        return
+        return;
     }
 }
-
 
 /// This is a low-level method designed to be used by third-party frameworks.
 /// Regular users of the assert package should not call it.
@@ -496,7 +495,7 @@ mod tests {
         assert_eq!(ai.hit, this_hit);
         assert_eq!(ai.must_hit, this_must_hit);
         assert_eq!(ai.id.as_str(), this_id);
-        assert_eq!(ai.details, this_details);
+        assert_eq!(ai.details, &this_details);
     }
 
     #[test]
@@ -544,7 +543,7 @@ mod tests {
         assert_eq!(ai.hit, this_hit);
         assert_eq!(ai.must_hit, this_must_hit);
         assert_eq!(ai.id.as_str(), this_id);
-        assert_eq!(ai.details, this_details);
+        assert_eq!(ai.details, &this_details);
     }
 
     #[test]
@@ -592,7 +591,7 @@ mod tests {
         assert_eq!(ai.hit, this_hit);
         assert_eq!(ai.must_hit, this_must_hit);
         assert_eq!(ai.id.as_str(), this_id);
-        assert_eq!(ai.details, this_details);
+        assert_eq!(ai.details, &this_details);
     }
 
     #[test]

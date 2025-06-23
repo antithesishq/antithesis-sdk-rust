@@ -81,6 +81,7 @@ fn assert_demo() {
     assert_unreachable!("Impossible to get here", &details);
 
     assert_always_greater_than!(3, 100, "not right");
+    assert_sometimes_greater_than_or_equal_to!(3, 100, "not right");
 
     assert_sometimes_all!({a: true, b: false}, "not all right");
 }

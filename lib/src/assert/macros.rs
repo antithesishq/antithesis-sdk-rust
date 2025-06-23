@@ -426,7 +426,7 @@ Example usage:
 #[macro_export]
 macro_rules! assert_always_greater_than_or_equal_to {
     ($left:expr, $right:expr, $message:literal$(, $details:expr)?) => {
-        $crate::numeric_guidance_helper!($crate::assert_always, >=, false, $left, $right, $message, $details)
+        $crate::numeric_guidance_helper!($crate::assert_always, >=, false, $left, $right, $message$(, $details)?)
     };
     ($($rest:tt)*) => {
         ::std::compile_error!(
@@ -442,7 +442,7 @@ Example usage:
 #[macro_export]
 macro_rules! assert_always_less_than {
     ($left:expr, $right:expr, $message:literal$(, $details:expr)?) => {
-        $crate::numeric_guidance_helper!($crate::assert_always, <, true, $left, $right, $message, $details)
+        $crate::numeric_guidance_helper!($crate::assert_always, <, true, $left, $right, $message$(, $details)?)
     };
     ($($rest:tt)*) => {
         ::std::compile_error!(
@@ -458,7 +458,7 @@ Example usage:
 #[macro_export]
 macro_rules! assert_always_less_than_or_equal_to {
     ($left:expr, $right:expr, $message:literal$(, $details:expr)?) => {
-        $crate::numeric_guidance_helper!($crate::assert_always, <=, true, $left, $right, $message, $details)
+        $crate::numeric_guidance_helper!($crate::assert_always, <=, true, $left, $right, $message$(, $details)?)
     };
     ($($rest:tt)*) => {
         ::std::compile_error!(
@@ -474,7 +474,7 @@ Example usage:
 #[macro_export]
 macro_rules! assert_sometimes_greater_than {
     ($left:expr, $right:expr, $message:literal$(, $details:expr)?) => {
-        $crate::numeric_guidance_helper!($crate::assert_sometimes, >, true, $left, $right, $message, $details)
+        $crate::numeric_guidance_helper!($crate::assert_sometimes, >, true, $left, $right, $message$(, $details)?)
     };
     ($($rest:tt)*) => {
         ::std::compile_error!(
@@ -490,7 +490,7 @@ Example usage:
 #[macro_export]
 macro_rules! assert_sometimes_greater_than_or_equal_to {
     ($left:expr, $right:expr, $message:literal$(, $details:expr)?) => {
-        $crate::numeric_guidance_helper!($crate::assert_sometimes, >=, true, $left, $right, $message, $details)
+        $crate::numeric_guidance_helper!($crate::assert_sometimes, >=, true, $left, $right, $message$(, $details)?)
     };
     ($($rest:tt)*) => {
         ::std::compile_error!(
@@ -506,7 +506,7 @@ Example usage:
 #[macro_export]
 macro_rules! assert_sometimes_less_than {
     ($left:expr, $right:expr, $message:literal$(, $details:expr)?) => {
-        $crate::numeric_guidance_helper!($crate::assert_sometimes, <, false, $left, $right, $message, $details)
+        $crate::numeric_guidance_helper!($crate::assert_sometimes, <, false, $left, $right, $message$(, $details)?)
     };
     ($($rest:tt)*) => {
         ::std::compile_error!(
@@ -522,7 +522,7 @@ Example usage:
 #[macro_export]
 macro_rules! assert_sometimes_less_than_or_equal_to {
     ($left:expr, $right:expr, $message:literal$(, $details:expr)?) => {
-        $crate::numeric_guidance_helper!($crate::assert_sometimes, <=, false, $left, $right, $message, $details)
+        $crate::numeric_guidance_helper!($crate::assert_sometimes, <=, false, $left, $right, $message$(, $details)?)
     };
     ($($rest:tt)*) => {
         ::std::compile_error!(

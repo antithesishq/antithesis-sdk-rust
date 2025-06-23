@@ -5,10 +5,10 @@
 ///
 /// Each macro/function in this module takes a parameter called ``message``, which is
 /// a string literal identifier used to aggregate assertions.
-/// Antithesis generates one test property per unique ``message`` This test property will be named ``message`` in the [triage report](https://antithesis.com/docs/reports/triage/).
+/// Antithesis generates one test property per unique ``message`` This test property will be named ``message`` in the [triage report](https://antithesis.com/reports/example-triage-report).
 ///
 /// Each macro/function also takes a parameter called ``details``, which is a key-value map of optional additional information provided by the user to add context for assertion failures.
-/// The information that is logged will appear in the ``logs`` section of a [triage report](https://antithesis.com/docs/reports/triage/).
+/// The information that is logged will appear in the ``logs`` section of a [triage report](https://antithesis.com/reports/example-triage-report).
 /// Normally the values in ``details`` are evaluated at runtime.
 pub mod assert;
 
