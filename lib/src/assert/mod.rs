@@ -406,6 +406,29 @@ pub fn assert_impl(
     id: String,
     details: &Value,
 ) {
+    // Spot artificer
+    let spot_artifact = || -> Option<Value> {
+        if hit && !condition {
+            let mut details = details.as_object()?.clone();
+            let artifact_path = details.get("artifact_path")?.as_str()?;
+            let artifact_dir = std::env::var(crate::internal::ARTIFICER_DIR).ok()?;
+            let nonce = format!("{:016x}", crate::random::get_random());
+            let mut artificer = std::fs::OpenOptions::new()
+                .write(true)
+                .append(true)
+                .create(true)
+                .open(std::path::Path::new(&artifact_dir).join(&nonce)).ok()?;
+            use std::io::Write;
+            writeln!(artificer, "{artifact_path}").ok()?;
+            details.insert("artifact_id".to_owned(), Value::String(nonce));
+            Some(Value::Object(details))
+        } else {
+            None
+        }
+    };
+    let new_details = spot_artifact();
+    let details = new_details.as_ref().unwrap_or(details);
+
     let assertion = AssertionInfo::new(
         assert_type,
         display_type,

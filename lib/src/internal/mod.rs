@@ -51,6 +51,8 @@ const SDK_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub const LOCAL_OUTPUT: &str = "ANTITHESIS_SDK_LOCAL_OUTPUT";
 
+pub const ARTIFICER_DIR: &str = "ANTITHESIS_ARTIFICER_DIR";
+
 #[cfg(feature = "full")]
 fn get_handler() -> Box<dyn LibHandler + Sync + Send> {
     match VoidstarHandler::try_load() {
