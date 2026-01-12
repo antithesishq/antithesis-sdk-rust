@@ -1,3 +1,6 @@
+use std::sync::atomic::AtomicU64;
+#[cfg(feature = "full")]
+use std::{collections::HashMap, sync::{atomic::Ordering, Arc, Mutex}};
 #[cfg(feature = "full")]
 use crate::internal;
 #[cfg(feature = "full")]
@@ -8,11 +11,6 @@ use serde::Serialize;
 use serde_json::Value;
 #[cfg(feature = "full")]
 use serde_json::json;
-
-#[cfg(feature = "full")]
-use std::collections::HashMap;
-#[cfg(feature = "full")]
-use std::sync::Mutex;
 
 mod macros;
 #[doc(hidden)]
@@ -31,44 +29,36 @@ pub static ANTITHESIS_CATALOG: [AssertionCatalogInfo];
 #[cfg(feature = "full")]
 pub static ANTITHESIS_GUIDANCE_CATALOG: [self::guidance::GuidanceCatalogInfo];
 
-// Only need an ASSET_TRACKER if there are actually assertions 'hit'
-// (i.e. encountered and invoked at runtime).
-//
-// Typically runtime assertions use the macros ``always!``, ``sometimes!``, etc.
-// or, a client is using the 'raw' interface ``assert_raw`` at runtime.
-//
-#[cfg(feature = "full")]
-pub(crate) static ASSERT_TRACKER: Lazy<Mutex<HashMap<String, TrackingInfo>>> =
-    Lazy::new(|| Mutex::new(HashMap::new()));
-
 #[cfg(feature = "full")]
 pub(crate) static INIT_CATALOG: Lazy<()> = Lazy::new(|| {
     for info in ANTITHESIS_CATALOG.iter() {
         let f_name: &str = info.function.as_ref();
         assert_impl(
             info.assert_type,
-            info.display_type.to_owned(),
+            info.display_type,
             info.condition,
-            info.message.to_owned(),
-            info.class.to_owned(),
-            f_name.to_owned(),
-            info.file.to_owned(),
+            info.message,
+            info.class,
+            f_name,
+            info.file,
             info.begin_line,
             info.begin_column,
             false, /* hit */
             info.must_hit,
-            info.id.to_owned(),
+            info.id,
             &json!(null),
+            None,
         );
     }
     for info in ANTITHESIS_GUIDANCE_CATALOG.iter() {
         guidance::guidance_impl(
             info.guidance_type,
-            info.message.to_owned(),
-            info.id.to_owned(),
-            info.class.to_owned(),
-            Lazy::force(info.function).to_string(),
-            info.file.to_owned(),
+            info.message,
+            info.id,
+            info.class,
+            #[allow(clippy::explicit_auto_deref)]
+            *Lazy::force(info.function),
+            info.file,
             info.begin_line,
             info.begin_column,
             info.maximize,
@@ -78,25 +68,22 @@ pub(crate) static INIT_CATALOG: Lazy<()> = Lazy::new(|| {
     }
 });
 
-#[cfg(feature = "full")]
-pub(crate) struct TrackingInfo {
-    pub pass_count: u64,
-    pub fail_count: u64,
+pub struct TrackingInfo {
+    pub pass_count: AtomicU64,
+    pub fail_count: AtomicU64,
 }
 
-#[cfg(feature = "full")]
 impl Default for TrackingInfo {
     fn default() -> Self {
         Self::new()
     }
 }
 
-#[cfg(feature = "full")]
 impl TrackingInfo {
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         TrackingInfo {
-            pass_count: 0,
-            fail_count: 0,
+            pass_count: AtomicU64::new(0),
+            fail_count: AtomicU64::new(0),
         }
     }
 }
@@ -110,10 +97,10 @@ pub enum AssertType {
 }
 
 #[derive(Serialize, Debug)]
-struct AntithesisLocationInfo {
-    class: String,
-    function: String,
-    file: String,
+struct AntithesisLocationInfo<'a> {
+    class: &'a str,
+    function: &'a str,
+    file: &'a str,
     begin_line: u32,
     begin_column: u32,
 }
@@ -137,34 +124,34 @@ pub struct AssertionCatalogInfo {
 }
 
 #[derive(Serialize, Debug)]
-struct AssertionInfo<'a> {
+struct AssertionInfo<'a, S: Serialize> {
     assert_type: AssertType,
-    display_type: String,
+    display_type: &'a str,
     condition: bool,
-    message: String,
-    location: AntithesisLocationInfo,
+    message: &'a str,
+    location: AntithesisLocationInfo<'a>,
     hit: bool,
     must_hit: bool,
-    id: String,
-    details: &'a Value,
+    id: &'a str,
+    details: &'a S,
 }
 
-impl<'a> AssertionInfo<'a> {
+impl<'a, S: Serialize> AssertionInfo<'a, S> {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         assert_type: AssertType,
-        display_type: String,
+        display_type: &'a str,
         condition: bool,
-        message: String,
-        class: String,
-        function: String,
-        file: String,
+        message: &'a str,
+        class: &'a str,
+        function: &'a str,
+        file: &'a str,
         begin_line: u32,
         begin_column: u32,
         hit: bool,
         must_hit: bool,
-        id: String,
-        details: &'a Value,
+        id: &'a str,
+        details: &'a S,
     ) -> Self {
         let location = AntithesisLocationInfo {
             class,
@@ -189,7 +176,7 @@ impl<'a> AssertionInfo<'a> {
 } 
 
 #[cfg(feature = "full")]
-impl AssertionInfo<'_> {
+impl<S: Serialize> AssertionInfo<'_, S> {
     // AssertionInfo::track_entry() determines if the assertion should
     // actually be emitted:
     //
@@ -205,28 +192,26 @@ impl AssertionInfo<'_> {
     // [X] if `condition` is false and tracker_entry_fail_count == 1 then
     // actually emit the assertion.
 
-    // Verify that the TrackingInfo for self in
-    // ASSERT_TRACKER has been updated according to self.condition
-    fn track_entry(&self) {
+    fn track_entry(&self, info: Option<&TrackingInfo>) {
         // Requirement: Catalog entries must always will emit()
         if !self.hit {
             self.emit();
             return;
         }
 
-        // Establish TrackingInfo for this trackingKey when needed
-        let mut tracker = ASSERT_TRACKER.lock().unwrap();
-        let info = tracker.entry(self.id.clone()).or_default();
         // Record the condition in the associated TrackingInfo entry,
         // and emit the assertion when first seeing a condition
-        let emitting = if self.condition {
-            info.pass_count += 1;
-            info.pass_count == 1
-        } else {
-            info.fail_count += 1;
-            info.fail_count == 1
+        let emitting = match (info, self.condition) {
+            (None, _) => true,
+            (Some(info), true) => {
+                let prior_value = info.pass_count.fetch_add(1, Ordering::SeqCst);
+                prior_value == 0
+            }
+            (Some(info), false) => {
+                let prior_value = info.fail_count.fetch_add(1, Ordering::SeqCst);
+                prior_value == 0
+            }
         };
-        drop(tracker); // release the lock asap
         if emitting {
             Lazy::force(&INIT_CATALOG);
             self.emit();
@@ -240,8 +225,8 @@ impl AssertionInfo<'_> {
 }
 
 #[cfg(not(feature = "full"))]
-impl AssertionInfo<'_> {
-    fn track_entry(&self) {
+impl<S: Serialize> AssertionInfo<'_, S> {
+    fn track_entry(&self, _info: Option<&TrackingInfo>) {
         return
     }
 }
@@ -358,6 +343,53 @@ impl AssertionInfo<'_> {
 /// // {"assert_type":"always","display_type":"Always","condition":false,"message":"Never extra votes","location":{"class":"mycrate::stuff","function":"mycrate::tally_vote","file":"src/voting.rs","begin_line":20,"begin_column":3},"hit":true,"must_hit":true,"id":"42-1005","details":{"voters":3,"votes":4}}
 /// ```
 #[allow(clippy::too_many_arguments)]
+#[cfg(feature = "full")]
+pub fn assert_raw(
+    condition: bool,
+    message: String,
+    details: &Value,
+    class: String,
+    function: String,
+    file: String,
+    begin_line: u32,
+    begin_column: u32,
+    hit: bool,
+    must_hit: bool,
+    assert_type: AssertType,
+    display_type: String,
+    id: String,
+) {
+    static ASSERT_TRACKER: Lazy<Mutex<HashMap<String, Arc<TrackingInfo>>>> = Lazy::new(|| Mutex::new(HashMap::new()));
+
+    // Establish TrackingInfo for this trackingKey when needed
+    let info = {
+        let mut tracker = ASSERT_TRACKER.lock().unwrap();
+        if !tracker.contains_key(&id) {
+            tracker.insert(id.clone(), Arc::new(TrackingInfo::default()));
+        }
+        tracker.get(&id).unwrap().clone()
+    };
+
+    assert_impl(
+        assert_type,
+        display_type.as_str(),
+        condition,
+        message.as_str(),
+        class.as_str(),
+        function.as_str(),
+        file.as_str(),
+        begin_line,
+        begin_column,
+        hit,
+        must_hit,
+        id.as_str(),
+        details,
+        Some(&*info),
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+#[cfg(not(feature = "full"))]
 pub fn assert_raw(
     condition: bool,
     message: String,
@@ -375,37 +407,39 @@ pub fn assert_raw(
 ) {
     assert_impl(
         assert_type,
-        display_type,
+        display_type.as_str(),
         condition,
-        message,
-        class,
-        function,
-        file,
+        message.as_str(),
+        class.as_str(),
+        function.as_str(),
+        file.as_str(),
         begin_line,
         begin_column,
         hit,
         must_hit,
-        id,
+        id.as_str(),
         details,
+        None,
     )
 }
 
 #[doc(hidden)]
 #[allow(clippy::too_many_arguments)]
-pub fn assert_impl(
+pub fn assert_impl<'a, S: Serialize>(
     assert_type: AssertType,
-    display_type: String,
+    display_type: &'a str,
     condition: bool,
-    message: String,
-    class: String,
-    function: String,
-    file: String,
+    message: &'a str,
+    class: &'a str,
+    function: &'a str,
+    file: &'a str,
     begin_line: u32,
     begin_column: u32,
     hit: bool,
     must_hit: bool,
-    id: String,
-    details: &Value,
+    id: &'a str,
+    details: &S,
+    info: Option<&TrackingInfo>,
 ) {
     let assertion = AssertionInfo::new(
         assert_type,
@@ -423,7 +457,7 @@ pub fn assert_impl(
         details,
     );
 
-    let _ = &assertion.track_entry();
+    let _ = &assertion.track_entry(info);
 }
 
 #[cfg(test)]
@@ -436,15 +470,15 @@ mod tests {
     #[test]
     fn new_tracking_info() {
         let ti = TrackingInfo::new();
-        assert_eq!(ti.pass_count, 0);
-        assert_eq!(ti.fail_count, 0);
+        assert_eq!(ti.pass_count.load(Ordering::SeqCst), 0);
+        assert_eq!(ti.fail_count.load(Ordering::SeqCst), 0);
     }
 
     #[test]
     fn default_tracking_info() {
         let ti: TrackingInfo = Default::default();
-        assert_eq!(ti.pass_count, 0);
-        assert_eq!(ti.fail_count, 0);
+        assert_eq!(ti.pass_count.load(Ordering::SeqCst), 0);
+        assert_eq!(ti.fail_count.load(Ordering::SeqCst), 0);
     }
 
     //--------------------------------------------------------------------------------
@@ -472,30 +506,30 @@ mod tests {
 
         let ai = AssertionInfo::new(
             this_assert_type,
-            this_display_type.to_owned(),
+            this_display_type,
             this_condition,
-            this_message.to_owned(),
-            this_class.to_owned(),
-            this_function.to_owned(),
-            this_file.to_owned(),
+            this_message,
+            this_class,
+            this_function,
+            this_file,
             this_begin_line,
             this_begin_column,
             this_hit,
             this_must_hit,
-            this_id.to_owned(),
+            this_id,
             &this_details,
         );
-        assert_eq!(ai.display_type.as_str(), this_display_type);
+        assert_eq!(ai.display_type, this_display_type);
         assert_eq!(ai.condition, this_condition);
-        assert_eq!(ai.message.as_str(), this_message);
-        assert_eq!(ai.location.class.as_str(), this_class);
-        assert_eq!(ai.location.function.as_str(), this_function);
-        assert_eq!(ai.location.file.as_str(), this_file);
+        assert_eq!(ai.message, this_message);
+        assert_eq!(ai.location.class, this_class);
+        assert_eq!(ai.location.function, this_function);
+        assert_eq!(ai.location.file, this_file);
         assert_eq!(ai.location.begin_line, this_begin_line);
         assert_eq!(ai.location.begin_column, this_begin_column);
         assert_eq!(ai.hit, this_hit);
         assert_eq!(ai.must_hit, this_must_hit);
-        assert_eq!(ai.id.as_str(), this_id);
+        assert_eq!(ai.id, this_id);
         assert_eq!(ai.details, &this_details);
     }
 
@@ -520,30 +554,30 @@ mod tests {
 
         let ai = AssertionInfo::new(
             this_assert_type,
-            this_display_type.to_owned(),
+            this_display_type,
             this_condition,
-            this_message.to_owned(),
-            this_class.to_owned(),
-            this_function.to_owned(),
-            this_file.to_owned(),
+            this_message,
+            this_class,
+            this_function,
+            this_file,
             this_begin_line,
             this_begin_column,
             this_hit,
             this_must_hit,
-            this_id.to_owned(),
+            this_id,
             &this_details,
         );
-        assert_eq!(ai.display_type.as_str(), this_display_type);
+        assert_eq!(ai.display_type, this_display_type);
         assert_eq!(ai.condition, this_condition);
-        assert_eq!(ai.message.as_str(), this_message);
-        assert_eq!(ai.location.class.as_str(), this_class);
-        assert_eq!(ai.location.function.as_str(), this_function);
-        assert_eq!(ai.location.file.as_str(), this_file);
+        assert_eq!(ai.message, this_message);
+        assert_eq!(ai.location.class, this_class);
+        assert_eq!(ai.location.function, this_function);
+        assert_eq!(ai.location.file, this_file);
         assert_eq!(ai.location.begin_line, this_begin_line);
         assert_eq!(ai.location.begin_column, this_begin_column);
         assert_eq!(ai.hit, this_hit);
         assert_eq!(ai.must_hit, this_must_hit);
-        assert_eq!(ai.id.as_str(), this_id);
+        assert_eq!(ai.id, this_id);
         assert_eq!(ai.details, &this_details);
     }
 
@@ -568,30 +602,30 @@ mod tests {
 
         let ai = AssertionInfo::new(
             this_assert_type,
-            this_display_type.to_owned(),
+            this_display_type,
             this_condition,
-            this_message.to_owned(),
-            this_class.to_owned(),
-            this_function.to_owned(),
-            this_file.to_owned(),
+            this_message,
+            this_class,
+            this_function,
+            this_file,
             this_begin_line,
             this_begin_column,
             this_hit,
             this_must_hit,
-            this_id.to_owned(),
+            this_id,
             &this_details,
         );
-        assert_eq!(ai.display_type.as_str(), this_display_type);
+        assert_eq!(ai.display_type, this_display_type);
         assert_eq!(ai.condition, this_condition);
-        assert_eq!(ai.message.as_str(), this_message);
-        assert_eq!(ai.location.class.as_str(), this_class);
-        assert_eq!(ai.location.function.as_str(), this_function);
-        assert_eq!(ai.location.file.as_str(), this_file);
+        assert_eq!(ai.message, this_message);
+        assert_eq!(ai.location.class, this_class);
+        assert_eq!(ai.location.function, this_function);
+        assert_eq!(ai.location.file, this_file);
         assert_eq!(ai.location.begin_line, this_begin_line);
         assert_eq!(ai.location.begin_column, this_begin_column);
         assert_eq!(ai.hit, this_hit);
         assert_eq!(ai.must_hit, this_must_hit);
-        assert_eq!(ai.id.as_str(), this_id);
+        assert_eq!(ai.id, this_id);
         assert_eq!(ai.details, &this_details);
     }
 
@@ -614,32 +648,35 @@ mod tests {
             "extent": 15,
         });
 
-        let before_tracker = tracking_info_for_key(this_id);
+        let tracker = TrackingInfo::new();
+
+        let before_tracker = clone_tracker(&tracker);
 
         assert_impl(
             this_assert_type,
-            this_display_type.to_owned(),
+            this_display_type,
             this_condition,
-            this_message.to_owned(),
-            this_class.to_owned(),
-            this_function.to_owned(),
-            this_file.to_owned(),
+            this_message,
+            this_class,
+            this_function,
+            this_file,
             this_begin_line,
             this_begin_column,
             this_hit,
             this_must_hit,
-            this_id.to_owned(),
+            this_id,
             &this_details,
+            Some(&tracker),
         );
 
-        let after_tracker = tracking_info_for_key(this_id);
+        let after_tracker: TrackingInfo = clone_tracker(&tracker);
 
         if this_condition {
-            assert_eq!(before_tracker.pass_count + 1, after_tracker.pass_count);
-            assert_eq!(before_tracker.fail_count, after_tracker.fail_count);
+            assert_eq!(before_tracker.pass_count.load(Ordering::SeqCst) + 1, after_tracker.pass_count.load(Ordering::SeqCst));
+            assert_eq!(before_tracker.fail_count.load(Ordering::SeqCst), after_tracker.fail_count.load(Ordering::SeqCst));
         } else {
-            assert_eq!(before_tracker.fail_count + 1, after_tracker.fail_count);
-            assert_eq!(before_tracker.pass_count, after_tracker.pass_count);
+            assert_eq!(before_tracker.fail_count.load(Ordering::SeqCst) + 1, after_tracker.fail_count.load(Ordering::SeqCst));
+            assert_eq!(before_tracker.pass_count.load(Ordering::SeqCst), after_tracker.pass_count.load(Ordering::SeqCst));
         };
     }
 
@@ -662,47 +699,43 @@ mod tests {
             "extent": 15,
         });
 
-        let before_tracker = tracking_info_for_key(this_id);
+        let tracker = TrackingInfo::new();
+
+        let before_tracker = clone_tracker(&tracker);
 
         assert_impl(
             this_assert_type,
-            this_display_type.to_owned(),
+            this_display_type,
             this_condition,
-            this_message.to_owned(),
-            this_class.to_owned(),
-            this_function.to_owned(),
-            this_file.to_owned(),
+            this_message,
+            this_class,
+            this_function,
+            this_file,
             this_begin_line,
             this_begin_column,
             this_hit,
             this_must_hit,
-            this_id.to_owned(),
+            this_id,
             &this_details,
+            Some(&tracker),
         );
 
-        let after_tracker = tracking_info_for_key(this_id);
+        let after_tracker: TrackingInfo = clone_tracker(&tracker);
 
         if this_condition {
-            assert_eq!(before_tracker.pass_count + 1, after_tracker.pass_count);
-            assert_eq!(before_tracker.fail_count, after_tracker.fail_count);
+            assert_eq!(before_tracker.pass_count.load(Ordering::SeqCst) + 1, after_tracker.pass_count.load(Ordering::SeqCst));
+            assert_eq!(before_tracker.fail_count.load(Ordering::SeqCst), after_tracker.fail_count.load(Ordering::SeqCst));
         } else {
-            assert_eq!(before_tracker.fail_count + 1, after_tracker.fail_count);
-            assert_eq!(before_tracker.pass_count, after_tracker.pass_count);
+            assert_eq!(before_tracker.fail_count.load(Ordering::SeqCst) + 1, after_tracker.fail_count.load(Ordering::SeqCst));
+            assert_eq!(before_tracker.pass_count.load(Ordering::SeqCst), after_tracker.pass_count.load(Ordering::SeqCst));
         };
     }
 
-    fn tracking_info_for_key(key: &str) -> TrackingInfo {
-        // Establish TrackingInfo for this trackingKey when needed
-        let mut tracking_data = TrackingInfo::new();
+    fn clone_tracker(old: &TrackingInfo) -> TrackingInfo {
+        let tracking_data = TrackingInfo::new();
+        tracking_data.pass_count.store(old.pass_count.load(Ordering::SeqCst), Ordering::SeqCst);
+        tracking_data.fail_count.store(old.fail_count.load(Ordering::SeqCst), Ordering::SeqCst);
+        tracking_data
 
-        let tracking_key: String = key.to_owned();
-        match ASSERT_TRACKER.lock().unwrap().get(&tracking_key) {
-            None => tracking_data,
-            Some(ti) => {
-                tracking_data.pass_count = ti.pass_count;
-                tracking_data.fail_count = ti.fail_count;
-                tracking_data
-            }
-        }
     }
 }
