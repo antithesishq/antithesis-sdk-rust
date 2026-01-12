@@ -56,6 +56,7 @@ pub(crate) static INIT_CATALOG: Lazy<()> = Lazy::new(|| {
             info.message,
             info.id,
             info.class,
+            #[allow(clippy::explicit_auto_deref)]
             *Lazy::force(info.function),
             info.file,
             info.begin_line,
@@ -647,7 +648,7 @@ mod tests {
             "extent": 15,
         });
 
-        let mut tracker = TrackingInfo::new();
+        let tracker = TrackingInfo::new();
 
         let before_tracker = clone_tracker(&tracker);
 
@@ -665,7 +666,7 @@ mod tests {
             this_must_hit,
             this_id,
             &this_details,
-            Some(&mut tracker),
+            Some(&tracker),
         );
 
         let after_tracker: TrackingInfo = clone_tracker(&tracker);
@@ -698,7 +699,7 @@ mod tests {
             "extent": 15,
         });
 
-        let mut tracker = TrackingInfo::new();
+        let tracker = TrackingInfo::new();
 
         let before_tracker = clone_tracker(&tracker);
 
@@ -716,7 +717,7 @@ mod tests {
             this_must_hit,
             this_id,
             &this_details,
-            Some(&mut tracker),
+            Some(&tracker),
         );
 
         let after_tracker: TrackingInfo = clone_tracker(&tracker);
