@@ -14,7 +14,7 @@ struct SetupCompleteData<'a> {
 }
 
 /// Indicates to Antithesis that setup has completed. Call this function when your system and workload are fully initialized.
-/// After this function is called, Antithesis will take a snapshot of your system and begin [injecting faults]( https://antithesis.com/docs/applications/reliability/fault_injection/).
+/// After this function is called, Antithesis will take a snapshot of your system and begin [injecting faults]( https://antithesis.com/docs/environment/fault_injection/).
 ///
 /// Calling this function multiple times or from multiple processes will have no effect.
 /// Antithesis will treat the first time any process called this function as the moment that the setup was completed.

@@ -1,7 +1,7 @@
 /// The assert module enables defining [test properties](https://antithesis.com/docs/using_antithesis/properties/)
 /// about your program or [workload](https://antithesis.com/docs/getting_started/first_test/).
 ///
-/// The constant [const@LOCAL_OUTPUT] is associated with local logging, which is one of the [local execution](https://antithesis.com/docs/using_antithesis/sdk/rust/overview/#sdk-runtime-behavior) modes.
+/// The constant [const@LOCAL_OUTPUT] is associated with local logging, which is one of the [local execution](https://antithesis.com/docs/using_antithesis/sdk/rust/#sdk-runtime-behavior) modes.
 ///
 /// Each macro/function in this module takes a parameter called ``message``, which is
 /// a string literal identifier used to aggregate assertions.
@@ -26,7 +26,7 @@ pub use serde_json;
 /// The lifecycle module contains functions which inform the Antithesis
 /// environment that particular test phases or milestones have been reached.
 /// 
-/// The constant [const@LOCAL_OUTPUT] is associated with local logging, which is one of the [local execution](https://antithesis.com/docs/using_antithesis/sdk/rust/overview/#sdk-runtime-behavior) modes.
+/// The constant [const@LOCAL_OUTPUT] is associated with local logging, which is one of the [local execution](https://antithesis.com/docs/using_antithesis/sdk/rust/#sdk-runtime-behavior) modes.
 pub mod lifecycle;
 
 /// The random module provides functions that request both structured and unstructured randomness from the Antithesis environment.
@@ -99,5 +99,5 @@ use once_cell::sync::Lazy;
 /// [Sometimes assertions](https://antithesis.com/docs/best_practices/sometimes_assertions/), but they can be quite useful even outside
 /// Antithesis.
 /// 
-/// See also the documentation for [local execution](https://antithesis.com/docs/using_antithesis/sdk/rust/overview/#sdk-runtime-behavior).
+/// See also the documentation for [local execution](https://antithesis.com/docs/using_antithesis/sdk/rust/#sdk-runtime-behavior).
 pub use crate::internal::LOCAL_OUTPUT;

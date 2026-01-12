@@ -5,19 +5,19 @@ use linkme::distributed_slice;
 #[cfg(feature = "full")]
 use once_cell::sync::Lazy;
 use serde::Serialize;
+use serde_json::Value;
 #[cfg(feature = "full")]
 use serde_json::json;
-use serde_json::Value;
 
 #[cfg(feature = "full")]
 use std::collections::HashMap;
 #[cfg(feature = "full")]
 use std::sync::Mutex;
 
+mod macros;
 #[doc(hidden)]
 #[cfg(feature = "full")]
 pub mod guidance;
-mod macros;
 
 /// Catalog of all antithesis assertions provided
 #[doc(hidden)]
@@ -183,10 +183,10 @@ impl<'a> AssertionInfo<'a> {
             hit,
             must_hit,
             id,
-            details,
+            details
         }
     }
-}
+} 
 
 #[cfg(feature = "full")]
 impl AssertionInfo<'_> {
@@ -242,9 +242,10 @@ impl AssertionInfo<'_> {
 #[cfg(not(feature = "full"))]
 impl AssertionInfo<'_> {
     fn track_entry(&self) {
-        return;
+        return
     }
 }
+
 
 /// This is a low-level method designed to be used by third-party frameworks.
 /// Regular users of the assert package should not call it.
