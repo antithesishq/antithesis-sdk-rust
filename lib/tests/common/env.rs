@@ -3,10 +3,7 @@ use std::env;
 pub fn set_var(k: &str, v: &str) -> Option<String> {
     let prev_v = env::var(k);
     env::set_var(k, v);
-    match prev_v {
-        Ok(s) => Some(s),
-        Err(_) => None,
-    }
+    prev_v.ok()
 }
 
 pub fn restore_var(k: &str, maybe_v: Option<String>) {
