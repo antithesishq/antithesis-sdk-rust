@@ -62,20 +62,23 @@ macro_rules! assert_helper {
 
         let ptr_function = Lazy::force(&FUN_NAME);
 
+        static TRACKER: $crate::assert::TrackingInfo = $crate::assert::TrackingInfo::new();
+
         $crate::assert::assert_impl(
             $assert_type,                     /* assert_type */
-            $display_type.to_owned(),         /* display_type */
+            $display_type,                    /* display_type */
             condition,                        /* condition */
-            $message.to_owned(),              /* message */
-            ::std::module_path!().to_owned(), /* class */
-            String::from(*ptr_function),      /* function */
-            ::std::file!().to_owned(),        /* file */
+            $message,                         /* message */
+            ::std::module_path!(),            /* class */
+            *ptr_function,                    /* function */
+            ::std::file!(),                   /* file */
             ::std::line!(),                   /* line */
             ::std::column!(),                 /* column */
             true,                             /* hit */
             $must_hit,                        /* must-hit */
-            $message.to_owned(),              /* id */
+            $message,                         /* id */
             details,                          /* details */
+            Some(&TRACKER),                   /* tracker */
         )
     }}; // end pattern-arm block
 }
@@ -306,11 +309,11 @@ macro_rules! guidance_helper {
 
         $crate::assert::guidance::guidance_impl(
             $guidance_type,
-            $message.to_owned(),
-            $message.to_owned(),
-            ::std::module_path!().to_owned(),
-            Lazy::force(&FUN_NAME).to_string(),
-            ::std::file!().to_owned(),
+            $message,
+            $message,
+            ::std::module_path!(),
+            *Lazy::force(&FUN_NAME),
+            ::std::file!(),
             ::std::line!(),
             ::std::column!(),
             $maximize,
