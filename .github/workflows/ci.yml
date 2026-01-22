@@ -18,5 +18,5 @@ jobs:
       with:
         nix_path: nixpkgs=channel:nixos-unstable
     - if: ${{ matrix.min-version }}
-      run: nix develop . -c cargo update -Z direct-minimal-versions
+      run: nix develop . -c cargo update -Z minimal-versions
     - run: nix flake check --keep-going --print-build-logs

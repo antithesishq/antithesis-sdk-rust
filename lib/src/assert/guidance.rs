@@ -201,11 +201,11 @@ pub enum GuidanceType {
 }
 
 #[derive(Serialize)]
-struct GuidanceInfo {
+struct GuidanceInfo<'a> {
     guidance_type: GuidanceType,
-    message: String,
-    id: String,
-    location: AntithesisLocationInfo,
+    message: &'a str,
+    id: &'a str,
+    location: AntithesisLocationInfo<'a>,
     maximize: bool,
     guidance_data: Value,
     hit: bool,
@@ -224,13 +224,13 @@ pub struct GuidanceCatalogInfo {
 }
 
 #[allow(clippy::too_many_arguments)]
-pub fn guidance_impl(
+pub fn guidance_impl<'a>(
     guidance_type: GuidanceType,
-    message: String,
-    id: String,
-    class: String,
-    function: String,
-    file: String,
+    message: &'a str,
+    id: &'a str,
+    class: &'a str,
+    function: &'a str,
+    file: &'a str,
     begin_line: u32,
     begin_column: u32,
     maximize: bool,

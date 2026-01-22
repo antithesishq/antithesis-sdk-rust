@@ -1,9 +1,19 @@
 use rand::{Error, RngCore};
 use crate::internal;
 
-/// Returns a u64 value chosen by Antithesis. You should not
-/// store this value or use it to seed a PRNG, but should use it
-/// immediately.
+/// Returns a u64 value chosen by Antithesis.
+///
+/// You should use this value immediately rather than using it
+/// later. If you delay, then it is possible for the simulation
+/// to branch in between receiving the random data and using it.
+/// These branches will have the same random value, which
+/// defeats the purpose of branching.
+///
+/// Similarly, do not use the value to seed a pseudo-random
+/// number generator. The PRNG will produce a deterministic
+/// sequence of pseudo-random values based on the seed, so if the
+/// simulation branches, the PRNG will use the same sequence of
+/// values in all branches.
 ///
 /// # Example
 ///
@@ -17,8 +27,19 @@ pub fn get_random() -> u64 {
     internal::dispatch_random()
 }
 
-/// Returns a randomly chosen item from a list of options. You
-/// should not store this value, but should use it immediately.
+/// Returns a randomly chosen item from a list of options.
+///
+/// You should use this value immediately rather than using it
+/// later. If you delay, then it is possible for the simulation
+/// to branch in between receiving the random data and using it.
+/// These branches will have the same random value, which
+/// defeats the purpose of branching.
+///
+/// Similarly, do not use the value to seed a pseudo-random
+/// number generator. The PRNG will produce a deterministic
+/// sequence of pseudo-random values based on the seed, so if the
+/// simulation branches, the PRNG will use the same sequence of
+/// values in all branches.
 ///
 /// This function is not purely for convenience. Signaling to
 /// the Antithesis platform that you intend to use a random value

@@ -23,12 +23,14 @@ mod voidstar_handler;
 mod local_handler;
 
 
+#[cfg(feature = "full")]
 #[derive(Serialize, Debug)]
 struct AntithesisLanguageInfo {
     name: &'static str,
     version: String,
 }
 
+#[cfg(feature = "full")]
 #[derive(Serialize, Debug)]
 struct AntithesisVersionInfo {
     language: AntithesisLanguageInfo,
@@ -36,6 +38,7 @@ struct AntithesisVersionInfo {
     protocol_version: &'static str,
 }
 
+#[cfg(feature = "full")]
 #[derive(Serialize, Debug)]
 struct AntithesisSDKInfo {
     antithesis_sdk: AntithesisVersionInfo,
