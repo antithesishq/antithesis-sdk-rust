@@ -442,9 +442,9 @@ pub fn assert_impl<'a, S: Serialize>(
     info: Option<&TrackingInfo>,
 ) {
     // Spot artificer
-    let spot_artifact = || -> Option<Value> {
+    let spot_artifact = |details_value: &Value| -> Option<Value> {
         if hit && !condition {
-            let mut details = details.as_object()?.clone();
+            let mut details = details_value.as_object()?.clone();
             let artifact_path = details.get("artifact_path")?.as_str()?;
             let artifact_dir = std::env::var(crate::internal::ARTIFICER_DIR).ok()?;
             let nonce = format!("{:016x}", crate::random::get_random());
@@ -461,8 +461,9 @@ pub fn assert_impl<'a, S: Serialize>(
             None
         }
     };
-    let new_details = spot_artifact();
-    let details = new_details.as_ref().unwrap_or(details);
+    let details_value = serde_json::to_value(details).unwrap_or(json!(null));
+    let new_details = spot_artifact(&details_value);
+    let details = new_details.as_ref().unwrap_or(&details_value);
 
     let assertion = AssertionInfo::new(
         assert_type,
