@@ -1,11 +1,11 @@
-use rand::{Error, RngCore};
 use crate::internal;
+use rand::RngCore;
 
 /// Returns a u64 value chosen by Antithesis.
 ///
-/// You should use this value immediately rather than using it
+/// You should use this value immediately rather than using it
 /// later. If you delay, then it is possible for the simulation
-/// to branch in between receiving the random data and using it.
+/// to branch in between receiving the random data and using it.
 /// These branches will have the same random value, which
 /// defeats the purpose of branching.
 ///
@@ -29,9 +29,9 @@ pub fn get_random() -> u64 {
 
 /// Returns a randomly chosen item from a list of options.
 ///
-/// You should use this value immediately rather than using it
+/// You should use this value immediately rather than using it
 /// later. If you delay, then it is possible for the simulation
-/// to branch in between receiving the random data and using it.
+/// to branch in between receiving the random data and using it.
 /// These branches will have the same random value, which
 /// defeats the purpose of branching.
 ///
@@ -120,19 +120,14 @@ impl RngCore for AntithesisRng {
             remainder.copy_from_slice(&random_bytes[..remainder.len()]);
         }
     }
-
-    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Error> {
-        self.fill_bytes(dest);
-        Ok(())
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::collections::{HashMap, HashSet};
+    use rand::prelude::IndexedRandom;
     use rand::Rng;
-    use rand::seq::SliceRandom;
+    use std::collections::{HashMap, HashSet};
 
     #[test]
     fn random_choice_no_choices() {
@@ -228,7 +223,7 @@ mod tests {
         let mut rng = AntithesisRng;
         let mut random_numbers: HashSet<u64> = HashSet::new();
         for _i in 0..100000 {
-            let rn: u64 = rng.gen();
+            let rn: u64 = rng.random();
             assert!(!random_numbers.contains(&rn));
             random_numbers.insert(rn);
         }

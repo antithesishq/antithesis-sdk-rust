@@ -2,7 +2,7 @@
 name = "antithesis_sdk"
 version = "0.2.7"
 edition = "2021"
-rust-version = "1.62.1"
+rust-version = "1.85.0"
 license = "MIT"
 readme = "../README.md"
 keywords = ["antithesis", "testing", "fuzzing", "quality"]
@@ -17,7 +17,7 @@ Rust SDK for the Antithesis autonomous software testing platform.
 [dependencies]
 serde = { version = "1.0.113", features = ["derive"] }
 serde_json = "1.0.25"
-rand = "0.8"
+rand = "0.9"
 
 # needed only if full feature is set
 rustc_version_runtime = {version = "0.3", optional = true}
