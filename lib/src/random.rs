@@ -79,9 +79,9 @@ pub fn random_choice<T>(slice: &[T]) -> Option<&T> {
 /// use rand::{Rng, RngCore};
 ///
 /// let mut rng = AntithesisRng;
-/// let random_u32: u32 = rng.gen();
-/// let random_u64: u64 = rng.gen();
-/// let random_char: char = rng.gen();
+/// let random_u32: u32 = rng.random();
+/// let random_u64: u64 = rng.random();
+/// let random_char: char = rng.random();
 ///
 /// let mut bytes = [0u8; 16];
 /// rng.fill_bytes(&mut bytes);
@@ -125,8 +125,8 @@ impl RngCore for AntithesisRng {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rand::prelude::IndexedRandom;
     use rand::Rng;
+    use rand::prelude::IndexedRandom;
     use std::collections::{HashMap, HashSet};
 
     #[test]
