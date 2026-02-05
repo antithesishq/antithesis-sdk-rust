@@ -1,6 +1,3 @@
-use std::sync::atomic::AtomicU64;
-#[cfg(feature = "full")]
-use std::{collections::HashMap, sync::{atomic::Ordering, Arc, Mutex}};
 #[cfg(feature = "full")]
 use crate::internal;
 #[cfg(feature = "full")]
@@ -11,11 +8,17 @@ use serde::Serialize;
 use serde_json::Value;
 #[cfg(feature = "full")]
 use serde_json::json;
+use std::sync::atomic::AtomicU64;
+#[cfg(feature = "full")]
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex, atomic::Ordering},
+};
 
-mod macros;
 #[doc(hidden)]
 #[cfg(feature = "full")]
 pub mod guidance;
+mod macros;
 
 /// Catalog of all antithesis assertions provided
 #[doc(hidden)]
@@ -170,10 +173,10 @@ impl<'a, S: Serialize> AssertionInfo<'a, S> {
             hit,
             must_hit,
             id,
-            details
+            details,
         }
     }
-} 
+}
 
 #[cfg(feature = "full")]
 impl<S: Serialize> AssertionInfo<'_, S> {
@@ -227,10 +230,9 @@ impl<S: Serialize> AssertionInfo<'_, S> {
 #[cfg(not(feature = "full"))]
 impl<S: Serialize> AssertionInfo<'_, S> {
     fn track_entry(&self, _info: Option<&TrackingInfo>) {
-        return
+        return;
     }
 }
-
 
 /// This is a low-level method designed to be used by third-party frameworks.
 /// Regular users of the assert package should not call it.
@@ -264,7 +266,7 @@ impl<S: Serialize> AssertionInfo<'_, S> {
 ///
 /// fn main() {
 ///     establish_catalog();
-///    
+///
 ///     let mut all_votes = Votes {
 ///         num_voters: 0,
 ///         candidate_1: 0,
@@ -317,7 +319,7 @@ impl<S: Serialize> AssertionInfo<'_, S> {
 ///         &json!({                          /* details */
 ///             "votes": num_votes,
 ///             "voters": votes.num_voters
-///         }),                        
+///         }),
 ///         "mycrate::stuff".to_owned(),      /* class */
 ///         "mycrate::tally_vote".to_owned(), /* function */
 ///         "src/voting.rs".to_owned(),       /* file */
@@ -359,7 +361,8 @@ pub fn assert_raw(
     display_type: String,
     id: String,
 ) {
-    static ASSERT_TRACKER: Lazy<Mutex<HashMap<String, Arc<TrackingInfo>>>> = Lazy::new(|| Mutex::new(HashMap::new()));
+    static ASSERT_TRACKER: Lazy<Mutex<HashMap<String, Arc<TrackingInfo>>>> =
+        Lazy::new(|| Mutex::new(HashMap::new()));
 
     // Establish TrackingInfo for this trackingKey when needed
     let info = {
@@ -672,11 +675,23 @@ mod tests {
         let after_tracker: TrackingInfo = clone_tracker(&tracker);
 
         if this_condition {
-            assert_eq!(before_tracker.pass_count.load(Ordering::SeqCst) + 1, after_tracker.pass_count.load(Ordering::SeqCst));
-            assert_eq!(before_tracker.fail_count.load(Ordering::SeqCst), after_tracker.fail_count.load(Ordering::SeqCst));
+            assert_eq!(
+                before_tracker.pass_count.load(Ordering::SeqCst) + 1,
+                after_tracker.pass_count.load(Ordering::SeqCst)
+            );
+            assert_eq!(
+                before_tracker.fail_count.load(Ordering::SeqCst),
+                after_tracker.fail_count.load(Ordering::SeqCst)
+            );
         } else {
-            assert_eq!(before_tracker.fail_count.load(Ordering::SeqCst) + 1, after_tracker.fail_count.load(Ordering::SeqCst));
-            assert_eq!(before_tracker.pass_count.load(Ordering::SeqCst), after_tracker.pass_count.load(Ordering::SeqCst));
+            assert_eq!(
+                before_tracker.fail_count.load(Ordering::SeqCst) + 1,
+                after_tracker.fail_count.load(Ordering::SeqCst)
+            );
+            assert_eq!(
+                before_tracker.pass_count.load(Ordering::SeqCst),
+                after_tracker.pass_count.load(Ordering::SeqCst)
+            );
         };
     }
 
@@ -723,19 +738,34 @@ mod tests {
         let after_tracker: TrackingInfo = clone_tracker(&tracker);
 
         if this_condition {
-            assert_eq!(before_tracker.pass_count.load(Ordering::SeqCst) + 1, after_tracker.pass_count.load(Ordering::SeqCst));
-            assert_eq!(before_tracker.fail_count.load(Ordering::SeqCst), after_tracker.fail_count.load(Ordering::SeqCst));
+            assert_eq!(
+                before_tracker.pass_count.load(Ordering::SeqCst) + 1,
+                after_tracker.pass_count.load(Ordering::SeqCst)
+            );
+            assert_eq!(
+                before_tracker.fail_count.load(Ordering::SeqCst),
+                after_tracker.fail_count.load(Ordering::SeqCst)
+            );
         } else {
-            assert_eq!(before_tracker.fail_count.load(Ordering::SeqCst) + 1, after_tracker.fail_count.load(Ordering::SeqCst));
-            assert_eq!(before_tracker.pass_count.load(Ordering::SeqCst), after_tracker.pass_count.load(Ordering::SeqCst));
+            assert_eq!(
+                before_tracker.fail_count.load(Ordering::SeqCst) + 1,
+                after_tracker.fail_count.load(Ordering::SeqCst)
+            );
+            assert_eq!(
+                before_tracker.pass_count.load(Ordering::SeqCst),
+                after_tracker.pass_count.load(Ordering::SeqCst)
+            );
         };
     }
 
     fn clone_tracker(old: &TrackingInfo) -> TrackingInfo {
         let tracking_data = TrackingInfo::new();
-        tracking_data.pass_count.store(old.pass_count.load(Ordering::SeqCst), Ordering::SeqCst);
-        tracking_data.fail_count.store(old.fail_count.load(Ordering::SeqCst), Ordering::SeqCst);
         tracking_data
-
+            .pass_count
+            .store(old.pass_count.load(Ordering::SeqCst), Ordering::SeqCst);
+        tracking_data
+            .fail_count
+            .store(old.fail_count.load(Ordering::SeqCst), Ordering::SeqCst);
+        tracking_data
     }
 }
