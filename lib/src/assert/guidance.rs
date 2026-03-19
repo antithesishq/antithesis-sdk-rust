@@ -49,10 +49,10 @@ impl<const MAX: bool, T: AtomicMinMax + PartialOrd + Copy> Guard<MAX, T> {
         use std::cmp::Ordering::*;
         if MAX {
             let max = T::fetch_max(&self.mark, new, atomic::Ordering::SeqCst);
-            matches!(max.partial_cmp(&new), None | Some(Less | Equal))
+            matches!(max.partial_cmp(&new), None | Some(Less))
         } else {
             let min = T::fetch_min(&self.mark, new, atomic::Ordering::SeqCst);
-            matches!(min.partial_cmp(&new), None | Some(Greater | Equal))
+            matches!(min.partial_cmp(&new), None | Some(Greater))
         }
     }
 }
