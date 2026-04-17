@@ -1,5 +1,5 @@
-/// The assert module enables defining [test properties](https://antithesis.com/docs/using_antithesis/properties/)
-/// about your program or [workload](https://antithesis.com/docs/getting_started/first_test/).
+/// The assert module enables defining [test properties](https://antithesis.com/docs/properties_assertions/properties/)
+/// about your program or [workload](https://antithesis.com/docs/test_templates/first_test/).
 ///
 /// The constant [const@LOCAL_OUTPUT] is associated with local logging, which is one of the [local execution](https://antithesis.com/docs/using_antithesis/sdk/rust/#sdk-runtime-behavior) modes.
 ///
@@ -33,7 +33,7 @@ pub mod lifecycle;
 ///
 /// These functions should not be used to seed a conventional PRNG, and should not have their return values stored and used to make a decision at a later time.
 /// Doing either of these things makes it much harder for the Antithesis platform to control the history of your program's execution, and also makes it harder for Antithesis to learn which inputs provided at which times are most fruitful.
-/// Instead, you should call a function from the random package every time your program or [workload](https://antithesis.com/docs/getting_started/first_test/) needs to make a decision, at the moment that you need to make the decision.
+/// Instead, you should call a function from the random package every time your program or [workload](https://antithesis.com/docs/test_templates/first_test/) needs to make a decision, at the moment that you need to make the decision.
 ///
 /// These functions are also safe to call outside the Antithesis environment, where
 /// they will fall back on the rust std library implementation.
