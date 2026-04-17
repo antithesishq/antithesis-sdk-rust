@@ -13,7 +13,7 @@
     inherit inputs;
     withOverlays = [
       inputs.rust-overlay.overlays.default
-      (final: { lib, rust-bin, ... }:
+      (final: { rust-bin, ... }:
         let
           # version:
           # "latest" => latest stable
@@ -50,7 +50,6 @@
           antithesis-sdk-rust = {
             workspace = workspace "nightly";
             workspaceEmptyFeature = workspaceEmptyFeature "nightly";
-            workspaceMSRV = workspace (lib.importTOML ./lib/Cargo.toml).package.rust-version;
             clippy = clippy "nightly";
             test = test "nightly";
             doc = doc "nightly";
@@ -71,12 +70,16 @@
 
     devShells.default = pkgs: {
       inputsFrom = with pkgs; [ antithesis-sdk-rust.workspace ];
-      packages = with pkgs; [ rust-analyzer cargo-msrv ];
+      packages = with pkgs; [ rust-analyzer ];
+    };
+
+    devShells.msrv = pkgs: {
+      packages = with pkgs; [ cargo-msrv rustup ];
     };
 
     # TODO: Perform semver check.
     checks = { antithesis-sdk-rust, ... }: {
-      inherit (antithesis-sdk-rust) workspaceMSRV workspaceEmptyFeature clippy test;
+      inherit (antithesis-sdk-rust) workspaceEmptyFeature clippy test;
     };
 
     # TODO: Decide whether we want auto formatting.
