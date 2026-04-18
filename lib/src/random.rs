@@ -1,5 +1,6 @@
-use rand::{Error, RngCore};
 use crate::internal;
+use core::convert::Infallible;
+use rand::TryRng;
 
 /// Returns a u64 value chosen by Antithesis.
 ///
@@ -69,60 +70,50 @@ pub fn random_choice<T>(slice: &[T]) -> Option<&T> {
 
 /// A random number generator that uses Antithesis's random number generation.
 ///
-/// This implements the `RngCore` trait from the `rand` crate, allowing it to be used
-/// with any code that expects a random number generator from that ecosystem.
+/// This implements the `Rng` trait from the `rand` crate (via `TryRng`),
+/// allowing it to be used with any code that expects a random number generator
+/// from that ecosystem.
 ///
 /// # Example
 ///
 /// ```
 /// use antithesis_sdk::random::AntithesisRng;
-/// use rand::{Rng, RngCore};
+/// use rand::{Rng, RngExt};
 ///
 /// let mut rng = AntithesisRng;
-/// let random_u32: u32 = rng.gen();
-/// let random_u64: u64 = rng.gen();
-/// let random_char: char = rng.gen();
+/// let random_u32: u32 = rng.random();
+/// let random_u64: u64 = rng.random();
+/// let random_char: char = rng.random();
 ///
 /// let mut bytes = [0u8; 16];
 /// rng.fill_bytes(&mut bytes);
 /// ```
 pub struct AntithesisRng;
 
-impl RngCore for AntithesisRng {
-    fn next_u32(&mut self) -> u32 {
-        get_random() as u32
+impl TryRng for AntithesisRng {
+    type Error = Infallible;
+
+    fn try_next_u32(&mut self) -> Result<u32, Self::Error> {
+        Ok(get_random() as u32)
     }
 
-    fn next_u64(&mut self) -> u64 {
-        get_random()
+    fn try_next_u64(&mut self) -> Result<u64, Self::Error> {
+        Ok(get_random())
     }
 
-    fn fill_bytes(&mut self, dest: &mut [u8]) {
-        // Split the destination buffer into chunks of 8 bytes each
-        // (since we'll fill each chunk with a u64/8 bytes of random data)
+    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Self::Error> {
         let mut chunks = dest.chunks_exact_mut(8);
 
-        // Fill each complete 8-byte chunk with random bytes
         for chunk in chunks.by_ref() {
-            // Generate 8 random bytes from a u64 in native endian order
-            let random_bytes = self.next_u64().to_ne_bytes();
-            // Copy those random bytes into this chunk
+            let random_bytes = get_random().to_ne_bytes();
             chunk.copy_from_slice(&random_bytes);
         }
 
-        // Get any remaining bytes that didn't fit in a complete 8-byte chunk
         let remainder = chunks.into_remainder();
-
         if !remainder.is_empty() {
-            // Generate 8 more random bytes
-            let random_bytes = self.next_u64().to_ne_bytes();
-            // Copy just enough random bytes to fill the remainder
+            let random_bytes = get_random().to_ne_bytes();
             remainder.copy_from_slice(&random_bytes[..remainder.len()]);
         }
-    }
-
-    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Error> {
-        self.fill_bytes(dest);
         Ok(())
     }
 }
@@ -130,9 +121,9 @@ impl RngCore for AntithesisRng {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rand::RngExt;
+    use rand::prelude::IndexedRandom;
     use std::collections::{HashMap, HashSet};
-    use rand::Rng;
-    use rand::seq::SliceRandom;
 
     #[test]
     fn random_choice_no_choices() {
@@ -228,7 +219,7 @@ mod tests {
         let mut rng = AntithesisRng;
         let mut random_numbers: HashSet<u64> = HashSet::new();
         for _i in 0..100000 {
-            let rn: u64 = rng.gen();
+            let rn: u64 = rng.random();
             assert!(!random_numbers.contains(&rn));
             random_numbers.insert(rn);
         }
