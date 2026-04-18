@@ -12,9 +12,9 @@ jobs:
       matrix:
         min-version: [true, false]
         msrv:
-          - rust-version: 1.62.1
+          - rust-version: 1.85.0
             features: full
-          - rust-version: 1.62.1
+          - rust-version: 1.85.0
             features: ""
     runs-on: ubuntu-latest
     steps:
