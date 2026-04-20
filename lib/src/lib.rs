@@ -38,6 +38,30 @@ pub mod lifecycle;
 /// These functions are also safe to call outside the Antithesis environment, where
 /// they will fall back on the rust std library implementation.
 ///
+/// # `rand` Integration
+///
+/// [`AntithesisRng`](crate::random::AntithesisRng) plugs the same Antithesis-controlled randomness into the
+/// `rand` ecosystem. Enable the feature flag that matches the version of `rand`
+/// your project already uses:
+///
+/// | Your `rand` version  | Feature flag               | Trait implemented            |
+/// |----------------------|----------------------------|------------------------------|
+/// | 0.8                  | `rand_v0_8` **(default)**  | [`rand_core::RngCore`](https://docs.rs/rand_core/0.6/rand_core/trait.RngCore.html)    |
+/// | 0.9                  | `rand_v0_9`                | [`rand_core::RngCore`](https://docs.rs/rand_core/0.9/rand_core/trait.RngCore.html)    |
+/// | 0.10                 | `rand_v0_10`               | [`rand_core::TryRng`](https://docs.rs/rand_core/0.10/rand_core/trait.TryRng.html)    |
+///
+/// ## Setup
+///
+/// Pick the flag matching your `rand` version. For example, with `rand 0.9`:
+///
+/// ```toml
+/// [dependencies]
+/// antithesis_sdk = { version = "0.2", features = ["rand_v0_9"] }
+/// rand = "0.9"
+/// ```
+///
+/// Multiple flags can coexist if your dependency tree includes more than one
+/// `rand` version.
 pub mod random;
 
 mod internal;

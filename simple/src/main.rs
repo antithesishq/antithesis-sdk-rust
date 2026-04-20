@@ -2,6 +2,9 @@ use serde_json::{json, Value};
 
 use antithesis_sdk::prelude::*;
 
+#[cfg(test)]
+mod rand;
+
 #[allow(dead_code)]
 fn random_demo() {
     // random::get_random()
