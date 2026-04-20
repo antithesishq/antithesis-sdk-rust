@@ -21,7 +21,7 @@
           # "1.61.0" => specific stable version
           craneLib = version: (inputs.crane.mkLib final).overrideToolchain (if version == "nightly" then rust-bin.nightly.latest.default else rust-bin.stable.${version}.default);
           commonArgs = {
-            src = ./.;
+            src = ./lib;
             pname = "antithesis-sdk-rust-workspace";
             version = "0.0.0";
           };
@@ -32,7 +32,7 @@
           workspaceEmptyFeature = version: (craneLib version).buildPackage (commonArgs // {
             cargoArtifacts = workspaceDeps version;
             cargoExtraArgs = "--no-default-features"; # Disable the default `full` feature for builds.
-            cargoTestExtraArgs = "-F full"; # But enable the `full` feature when running `cargo test`.
+            cargoTestExtraArgs = "-F full -F rand_v0_8"; # But enable the `full` and `rand_v0_8` feature when running `cargo test`.
           });
           clippy = version: (craneLib version).cargoClippy (commonArgs // {
             cargoArtifacts = workspaceDeps version;
