@@ -38,3 +38,21 @@ jobs:
       env:
         CARGO_NET_GIT_FETCH_WITH_CLI: true # workaround slow index fetch: https://github.com/rust-lang/cargo/issues/11014
     - run: nix flake check --keep-going --print-build-logs
+  test:
+    strategy:
+      matrix:
+        min-version: [true, false]
+        features:
+        - "default"
+        - ""
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v6
+    - uses: cachix/install-nix-action@v26
+      with:
+        nix_path: nixpkgs=channel:nixos-unstable
+    - if: ${{ matrix.min-version }}
+      run: nix develop .. -c cargo update -Z minimal-versions
+      working-directory: ./simple
+    - run: nix develop .. -c cargo test --no-default-features --features "${{ matrix.features }}"
+      working-directory: ./simple
