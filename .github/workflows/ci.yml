@@ -33,7 +33,7 @@ jobs:
     - if: ${{ matrix.min-version }}
       run: nix develop .. -c cargo update -Z minimal-versions
       working-directory: ./lib
-    - run: nix develop ..#msrv -c cargo msrv verify --rust-version ${{ matrix.msrv.rust-version }} --no-default-features --features "${{ matrix.msrv.features }}"
+    - run: nix develop .. -c cargo msrv verify --rust-version ${{ matrix.msrv.rust-version }} --no-default-features --features "${{ matrix.msrv.features }}"
       working-directory: ./lib
       env:
         CARGO_NET_GIT_FETCH_WITH_CLI: true # workaround slow index fetch: https://github.com/rust-lang/cargo/issues/11014

@@ -15,44 +15,35 @@
       inputs.rust-overlay.overlays.default
       (final: { rust-bin, ... }:
         let
-          # version:
-          # "latest" => latest stable
-          # "nightly" => latest nightly
-          # "1.61.0" => specific stable version
-          craneLib = version: (inputs.crane.mkLib final).overrideToolchain (if version == "nightly" then rust-bin.nightly.latest.default else rust-bin.stable.${version}.default);
+          craneLib = (inputs.crane.mkLib final).overrideToolchain rust-bin.nightly.latest.default;
           commonArgs = {
             src = ./lib;
             pname = "antithesis-sdk-rust-workspace";
             version = "0.0.0";
           };
-          workspaceDeps = version: (craneLib version).buildDepsOnly commonArgs;
-          workspace = version: (craneLib version).buildPackage (commonArgs // {
-            cargoArtifacts = workspaceDeps version;
+          workspaceDeps = craneLib.buildDepsOnly commonArgs;
+          workspace = craneLib.buildPackage (commonArgs // {
+            cargoArtifacts = workspaceDeps;
           });
-          workspaceEmptyFeature = version: (craneLib version).buildPackage (commonArgs // {
-            cargoArtifacts = workspaceDeps version;
+          workspaceEmptyFeature = craneLib.buildPackage (commonArgs // {
+            cargoArtifacts = workspaceDeps;
             cargoExtraArgs = "--no-default-features"; # Disable the default `full` feature for builds.
             cargoTestExtraArgs = "-F full -F rand_v0_8"; # But enable the `full` and `rand_v0_8` feature when running `cargo test`.
           });
-          clippy = version: (craneLib version).cargoClippy (commonArgs // {
-            cargoArtifacts = workspaceDeps version;
+          clippy = craneLib.cargoClippy (commonArgs // {
+            cargoArtifacts = workspaceDeps;
             cargoClippyExtraArgs = "--all-targets -- -D warnings";
           });
-          test = version: (craneLib version).cargoTest (commonArgs // {
-            cargoArtifacts = workspaceDeps version;
+          test = craneLib.cargoTest (commonArgs // {
+            cargoArtifacts = workspaceDeps;
           });
-          doc = version: (craneLib version).cargoDoc (commonArgs // {
-            cargoArtifacts = workspaceDeps version;
+          doc = craneLib.cargoDoc (commonArgs // {
+            cargoArtifacts = workspaceDeps;
           });
         in
         {
-          inherit craneLib workspaceDeps;
           antithesis-sdk-rust = {
-            workspace = workspace "nightly";
-            workspaceEmptyFeature = workspaceEmptyFeature "nightly";
-            clippy = clippy "nightly";
-            test = test "nightly";
-            doc = doc "nightly";
+            inherit workspace workspaceEmptyFeature clippy test doc;
           };
         })
     ];
@@ -70,11 +61,7 @@
 
     devShells.default = pkgs: {
       inputsFrom = with pkgs; [ antithesis-sdk-rust.workspace ];
-      packages = with pkgs; [ rust-analyzer ];
-    };
-
-    devShells.msrv = pkgs: {
-      packages = with pkgs; [ cargo-msrv rustup ];
+      packages = with pkgs; [ rust-analyzer cargo-msrv ];
     };
 
     # TODO: Perform semver check.
