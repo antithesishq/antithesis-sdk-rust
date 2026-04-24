@@ -61,7 +61,7 @@
 
     devShells.default = pkgs: {
       inputsFrom = with pkgs; [ antithesis-sdk-rust.workspace ];
-      packages = with pkgs; [ rust-analyzer cargo-msrv ];
+      packages = with pkgs; [ rust-analyzer cargo-msrv cargo-semver-checks ];
     };
 
     # TODO: Perform semver check.
