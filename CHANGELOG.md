@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+Support `rand` 0.8/0.9/0.10 via version-specific feature flags (`rand_v0_8`, `rand_v0_9`, `rand_v0_10`).
+
 ## 0.2.8 - 2026-02-09
 
 Reduce verbosity of guidance tracking. The SDK now only emits guidance events when a value strictly exceeds the previous tracked min/max, rather than on equal values too.

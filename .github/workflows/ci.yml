@@ -12,10 +12,18 @@ jobs:
       matrix:
         min-version: [true, false]
         msrv:
-          - rust-version: 1.62.1
-            features: full
-          - rust-version: 1.62.1
-            features: ""
+        - rust-version: 1.62.1
+          features: full
+        - rust-version: 1.62.1
+          features: ""
+        - rust-version: 1.62.1
+          features: "full,rand_v0_8"
+        - rust-version: 1.63.0
+          features: "full,rand_v0_9"
+        - rust-version: 1.85.1
+          features: "full,rand_v0_10"
+        - rust-version: 1.85.1
+          features: "full,rand_v0_8,rand_v0_9,rand_v0_10"
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v6
@@ -23,8 +31,42 @@ jobs:
       with:
         nix_path: nixpkgs=channel:nixos-unstable
     - if: ${{ matrix.min-version }}
-      run: nix develop . -c cargo update -Z minimal-versions
-    - run: nix develop .#msrv -c cargo msrv verify --rust-version ${{ matrix.msrv.rust-version }} --no-default-features --features "${{ matrix.msrv.features }}"
+      run: nix develop .. -c cargo update -Z minimal-versions
+      working-directory: ./lib
+    - run: nix develop .. -c cargo msrv verify --rust-version ${{ matrix.msrv.rust-version }} --no-default-features --features "${{ matrix.msrv.features }}"
+      working-directory: ./lib
       env:
         CARGO_NET_GIT_FETCH_WITH_CLI: true # workaround slow index fetch: https://github.com/rust-lang/cargo/issues/11014
     - run: nix flake check --keep-going --print-build-logs
+  test:
+    strategy:
+      matrix:
+        min-version: [true, false]
+        features:
+        - "default"
+        - ""
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v6
+    - uses: cachix/install-nix-action@v26
+      with:
+        nix_path: nixpkgs=channel:nixos-unstable
+    - if: ${{ matrix.min-version }}
+      run: nix develop .. -c cargo update -Z minimal-versions
+      working-directory: ./simple
+    - run: nix develop .. -c cargo test --no-default-features --features "${{ matrix.features }}"
+      working-directory: ./simple
+  semver-check:
+    strategy:
+      matrix:
+        feature-flags:
+        - ""
+        - "--only-explicit-features"
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v6
+    - uses: cachix/install-nix-action@v26
+      with:
+        nix_path: nixpkgs=channel:nixos-unstable
+    - run: nix develop .. -c cargo semver-checks ${{ matrix.feature-flags }}
+      working-directory: ./lib

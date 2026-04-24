@@ -115,7 +115,7 @@ fn assert_always_with_details() {
                     assert!(location.function.ends_with("::assert_always_with_details"));
                     assert!(location
                         .file
-                        .ends_with("/tests/assert_always_with_details.rs"));
+                        .ends_with("tests/assert_always_with_details.rs"));
                 }
                 println!("{:?}", obj);
             }
