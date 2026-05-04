@@ -45,7 +45,7 @@ fn assert_guidance() {
                     assert!(location.function.ends_with("::assert_guidance"));
                     assert!(location
                         .file
-                        .ends_with("/tests/assert_guidance.rs"));
+                        .ends_with("tests/assert_guidance.rs"));
                 }
                 println!("{:?}", obj);
             }

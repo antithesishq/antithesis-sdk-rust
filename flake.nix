@@ -5,10 +5,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     flake-compat.url = "https://flakehub.com/f/edolstra/flake-compat/1.tar.gz";
     flakelight.url = "github:nix-community/flakelight";
-    crane = {
-      url = "github:ipetkov/crane";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    crane.url = "github:ipetkov/crane";
     rust-overlay.url = "github:oxalica/rust-overlay";
   };
 
@@ -16,55 +13,45 @@
     inherit inputs;
     withOverlays = [
       inputs.rust-overlay.overlays.default
-      (final: { inputs', lib, rust-bin, ... }:
+      (final: { rust-bin, ... }:
         let
-          # version:
-          # "latest" => latest stable
-          # "nightly" => latest nightly
-          # "1.61.0" => specific stable version
-          craneLib = version: inputs'.crane.lib.overrideToolchain (if version == "nightly" then rust-bin.nightly.latest.default else rust-bin.stable.${version}.default);
+          craneLib = (inputs.crane.mkLib final).overrideToolchain rust-bin.nightly.latest.default;
           commonArgs = {
-            src = ./.;
+            src = ./lib;
             pname = "antithesis-sdk-rust-workspace";
             version = "0.0.0";
           };
-          workspaceDeps = version: (craneLib version).buildDepsOnly commonArgs;
-          workspace = version: (craneLib version).buildPackage (commonArgs // {
-            cargoArtifacts = workspaceDeps version;
+          workspaceDeps = craneLib.buildDepsOnly commonArgs;
+          workspace = craneLib.buildPackage (commonArgs // {
+            cargoArtifacts = workspaceDeps;
           });
-          workspaceEmptyFeature = version: (craneLib version).buildPackage (commonArgs // {
-            cargoArtifacts = workspaceDeps version;
+          workspaceEmptyFeature = craneLib.buildPackage (commonArgs // {
+            cargoArtifacts = workspaceDeps;
             cargoExtraArgs = "--no-default-features"; # Disable the default `full` feature for builds.
-            cargoTestExtraArgs = "-F full"; # But enable the `full` feature when running `cargo test`.
+            cargoTestExtraArgs = "-F full -F rand_v0_8"; # But enable the `full` and `rand_v0_8` feature when running `cargo test`.
           });
-          clippy = version: (craneLib version).cargoClippy (commonArgs // {
-            cargoArtifacts = workspaceDeps version;
+          clippy = craneLib.cargoClippy (commonArgs // {
+            cargoArtifacts = workspaceDeps;
             cargoClippyExtraArgs = "--all-targets -- -D warnings";
           });
-          test = version: (craneLib version).cargoTest (commonArgs // {
-            cargoArtifacts = workspaceDeps version;
+          test = craneLib.cargoTest (commonArgs // {
+            cargoArtifacts = workspaceDeps;
           });
-          doc = version: (craneLib version).cargoDoc (commonArgs // {
-            cargoArtifacts = workspaceDeps version;
+          doc = craneLib.cargoDoc (commonArgs // {
+            cargoArtifacts = workspaceDeps;
           });
         in
         {
-          inherit craneLib workspaceDeps;
           antithesis-sdk-rust = {
-            workspace = workspace "nightly";
-            workspaceEmptyFeature = workspaceEmptyFeature "nightly";
-            workspaceMSRV = workspace (lib.importTOML ./lib/Cargo.toml).package.rust-version;
-            clippy = clippy "nightly";
-            test = test "nightly";
-            doc = doc "nightly";
+            inherit workspace workspaceEmptyFeature clippy test doc;
           };
         })
     ];
 
     packages = rec {
       default = workspace;
-      workspace = { antithesis-sdk-rust }: antithesis-sdk-rust.workspace;
-      doc = { antithesis-sdk-rust }: antithesis-sdk-rust.doc;
+      workspace = pkgs: pkgs.antithesis-sdk-rust.workspace;
+      doc = pkgs: pkgs.antithesis-sdk-rust.doc;
     };
 
     apps = rec {
@@ -74,12 +61,12 @@
 
     devShells.default = pkgs: {
       inputsFrom = with pkgs; [ antithesis-sdk-rust.workspace ];
-      packages = with pkgs; [ rust-analyzer cargo-msrv ];
+      packages = with pkgs; [ rust-analyzer cargo-msrv cargo-semver-checks ];
     };
 
     # TODO: Perform semver check.
     checks = { antithesis-sdk-rust, ... }: {
-      inherit (antithesis-sdk-rust) workspaceMSRV workspaceEmptyFeature clippy test;
+      inherit (antithesis-sdk-rust) workspaceEmptyFeature clippy test;
     };
 
     # TODO: Decide whether we want auto formatting.
