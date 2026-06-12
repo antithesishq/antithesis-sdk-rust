@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.9 - 2026-06-12
 
 Support `rand` 0.8/0.9/0.10 via version-specific feature flags (`rand_v0_8`, `rand_v0_9`, `rand_v0_10`).
 
