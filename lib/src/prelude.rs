@@ -14,4 +14,6 @@ pub use crate::assert_sometimes_less_than;
 pub use crate::assert_sometimes_less_than_or_equal_to;
 pub use crate::assert_always_some;
 pub use crate::assert_sometimes_all;
+pub use crate::observe;
+pub use crate::ghost::GhostState;
 pub use crate::{antithesis_init, lifecycle, random};

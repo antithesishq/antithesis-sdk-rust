@@ -89,6 +89,29 @@ fn assert_demo() {
     assert_sometimes_all!({a: true, b: false}, "not all right");
 }
 
+fn ghost_demo() {
+    // Read-only ghost state: our belief about the current queue depth, driven
+    // entirely by "events". The only way to change it is `mutate`.
+    let mut queue_depth = GhostState::new(|| 0i64);
+    for _ in 0..5 {
+        queue_depth.mutate(|n| *n += 1); // `n: &mut i64` is inferred
+    }
+    queue_depth.mutate(|n| *n -= 2);
+
+    // Observe the ghost state: read-only property checks over its interior.
+    observe!(queue_depth, |depth| {
+        // `depth: &i64` is inferred
+        let details = json!({ "depth": *depth });
+        assert_always!(*depth >= 0, "Queue depth is never negative", &details);
+    });
+
+    // `observe!` with no models is a pure property block over the environment.
+    observe!(|| {
+        let r = random::get_random();
+        assert_sometimes!(r % 2 == 0, "Randomness is sometimes even", &json!({ "r": r }));
+    });
+}
+
 pub fn main() {
     antithesis_init();
     antithesis_init();
@@ -99,4 +122,6 @@ pub fn main() {
     lifecycle_demo();
 
     assert_demo();
+
+    ghost_demo();
 }

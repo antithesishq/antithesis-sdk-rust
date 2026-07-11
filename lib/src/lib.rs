@@ -64,6 +64,15 @@ pub mod lifecycle;
 /// `rand` version.
 pub mod random;
 
+/// The ghost module provides an optional, compile-time-checked layer for
+/// writing read-only test properties (via the [`observe!`] macro) and
+/// ghost state (via [`GhostState`](crate::ghost::GhostState)) that can be
+/// safely compiled out of production builds.
+pub mod ghost;
+
+#[doc(inline)]
+pub use crate::ghost::GhostState;
+
 mod internal;
 
 /// Convenience to import all macros and functions
