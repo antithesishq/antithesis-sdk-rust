@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+Add an optional, compile-time-checked `ghost` layer on top of the existing API:
+
+- The `observe!` macro runs a read-only property block that may call any SDK API (assertions, guidance, randomness) but is forbidden by the compiler from mutating anything it captures from the system under test. It can optionally borrow one or more `GhostState`s.
+- `GhostState<T>` is opaque ghost state — auxiliary state that exists only to express properties and is erased from production builds — whose only mutator is `GhostState::mutate` and whose only reader is `observe!`. Because access is funneled exclusively through these read-only closures, the ghost state — its construction, mutation, and observation — is safely compiled out when the `full` feature is disabled.
+
+Both the read-only enforcement (via a plain `Fn` bound) and the compile-out behavior are implemented entirely in safe Rust.
+
 ## 0.2.9 - 2026-06-12
 
 Support `rand` 0.8/0.9/0.10 via version-specific feature flags (`rand_v0_8`, `rand_v0_9`, `rand_v0_10`).
