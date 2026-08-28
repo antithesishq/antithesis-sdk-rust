@@ -1,3 +1,5 @@
+use std::u64;
+
 use crate::internal;
 
 /// Returns a u64 value chosen by Antithesis.
@@ -60,7 +62,14 @@ pub fn random_choice<T>(slice: &[T]) -> Option<&T> {
         [] => None,
         [x] => Some(x),
         _ => {
-            let idx: usize = (get_random() as usize) % slice.len();
+            let ceiling = (u64::MAX / slice.len() as u64) * slice.len() as u64;
+
+            let mut random = get_random();
+            while random >= ceiling {
+                random = get_random();
+            }
+
+            let idx: usize = (random as usize) % slice.len();
             Some(&slice[idx])
         }
     }

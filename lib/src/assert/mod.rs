@@ -1,6 +1,6 @@
 use std::sync::atomic::AtomicU64;
 #[cfg(feature = "full")]
-use std::{collections::HashMap, sync::{atomic::Ordering, Arc, Mutex}};
+use std::{collections::HashMap, sync::{atomic::Ordering, Arc, RwLock}};
 #[cfg(feature = "full")]
 use crate::internal;
 #[cfg(feature = "full")]
@@ -359,15 +359,20 @@ pub fn assert_raw(
     display_type: String,
     id: String,
 ) {
-    static ASSERT_TRACKER: Lazy<Mutex<HashMap<String, Arc<TrackingInfo>>>> = Lazy::new(|| Mutex::new(HashMap::new()));
+    static ASSERT_TRACKER: Lazy<RwLock<HashMap<String, Arc<TrackingInfo>>>> =
+        Lazy::new(|| RwLock::new(HashMap::new()));
 
-    // Establish TrackingInfo for this trackingKey when needed
-    let info = {
-        let mut tracker = ASSERT_TRACKER.lock().unwrap();
-        if !tracker.contains_key(&id) {
-            tracker.insert(id.clone(), Arc::new(TrackingInfo::default()));
-        }
-        tracker.get(&id).unwrap().clone()
+    // Establish TrackingInfo for this trackingKey when needed. The read
+    // guard must drop before the write lock is taken.
+    let existing = ASSERT_TRACKER.read().unwrap().get(&id).cloned();
+    let info = match existing {
+        Some(info) => info,
+        None => ASSERT_TRACKER
+            .write()
+            .unwrap()
+            .entry(id.clone())
+            .or_default()
+            .clone(),
     };
 
     assert_impl(
@@ -463,6 +468,8 @@ pub fn assert_impl<'a, S: Serialize>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(not(feature = "full"))] use serde_json::json;
+    #[cfg(not(feature = "full"))] use std::sync::atomic::Ordering;
 
     //--------------------------------------------------------------------------------
     // Tests for TrackingInfo

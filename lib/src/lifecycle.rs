@@ -61,13 +61,10 @@ pub fn setup_complete(details: &Value) {
 /// lifecycle::send_event("start_day", &info_value);
 /// ```
 pub fn send_event(name: &str, details: &Value) {
-    let trimmed_name = name.trim();
-    let owned_name: String = if trimmed_name.is_empty() {
-        "anonymous".to_owned()
-    } else {
-        trimmed_name.to_owned()
-    };
-    let json_event = json!({ owned_name: details });
+    // The name is passed through verbatim, like every other SDK: renaming
+    // or trimming here would make the same program emit different events
+    // depending on which SDK it was written against.
+    let json_event = json!({ name: details });
     internal::dispatch_output(&json_event)
 }
 

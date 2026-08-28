@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+Fix overly broad synchronization in `assert_raw`.
+
+Remove small modulo bias from `random_choice`.
+
+When used in local debug mode, the output file (`ANTITHESIS_SDK_LOCAL_OUTPUT`) will no longer be truncated at initialization.
+
+`lifecycle::send_event` no longer trims event names or substitutes
+"anonymous" for empty ones: every other SDK passes the name through
+verbatim, so the same program emitted different events depending on which
+SDK it was written against. Surfaced by the cross-SDK conformance harness
+(star: sdk/conformance). Version bumped to 0.3.0.
+
 ## 0.2.9 - 2026-06-12
 
 Support `rand` 0.8/0.9/0.10 via version-specific feature flags (`rand_v0_8`, `rand_v0_9`, `rand_v0_10`).

@@ -35,7 +35,10 @@ macro_rules! function {
 macro_rules! assert_helper {
     // The handling of this pattern-arm of assert_helper
     // is wrapped in a block {} to avoid name collisions
-    (condition = $condition:expr, $message:literal, $(details = $details:expr)?, $assert_type:path, $display_type:literal, must_hit = $must_hit:literal) => {{
+    (condition = $condition:expr, $message:expr, $(details = $details:expr)?, $assert_type:path, $display_type:literal, must_hit = $must_hit:literal) => {{
+        // `$message` must be const evaluable
+        const _: &str = $message;
+
         // Force evaluation of expressions.
         let condition = $condition;
         let details = &$crate::serde_json::json!({});
@@ -87,7 +90,10 @@ macro_rules! assert_helper {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! assert_helper {
-    (condition = $condition:expr, $message:literal, $(details = $details:expr)?, $assert_type:path, $display_type:literal, must_hit = $must_hit:literal) => {{
+    (condition = $condition:expr, $message:expr, $(details = $details:expr)?, $assert_type:path, $display_type:literal, must_hit = $must_hit:literal) => {{
+        // `$message` must be const evaluable
+        const _: &str = $message;
+
         // Force evaluation of expressions, ensuring that
         // any side effects of these expressions will always be
         // evaluated at runtime - even if the assertion itself
@@ -103,17 +109,49 @@ macro_rules! assert_helper {
 /// # Example
 ///
 /// ```
-/// use serde_json::{json};
+/// use serde::Serialize;
 /// use antithesis_sdk::{assert_always, random};
+///
+/// // Details can be any Serialize type, and are only serialized when the
+/// // assertion actually emits — on a sparse sample of passing and failing
+/// // evaluations. A plain struct of values and references like this
+/// // therefore costs nothing on the hot path.
+/// #[derive(Serialize)]
+/// struct Details<'a> {
+///     max_allowed: u64,
+///     actual: u64,
+///     source: &'a str,
+/// }
 ///
 /// const MAX_ALLOWED: u64 = 100;
 /// let actual = random::get_random() % 100u64;
-/// let details = json!({"max_allowed": MAX_ALLOWED, "actual": actual});
+/// let details = Details { max_allowed: MAX_ALLOWED, actual, source: "demo" };
 /// antithesis_sdk::assert_always!(actual < MAX_ALLOWED, "Value in range", &details);
+/// ```
+///
+/// Ensure that non-const-evaluable messages are rejected.
+///
+/// ```
+/// use serde_json::json;
+/// const MESSAGE: &str = concat!("Value", " in range");
+/// antithesis_sdk::assert_always!(true, MESSAGE, &json!({}));
+/// ```
+///
+/// A message computed at runtime is rejected at compile time:
+///
+/// ```compile_fail
+/// use serde_json::json;
+/// let message = String::from("Value in range");
+/// antithesis_sdk::assert_always!(true, message, &json!({}));
+/// ```
+///
+/// ```compile_fail
+/// use serde_json::json;
+/// antithesis_sdk::assert_always!(true, format!("{}", "Value in range"), &json!({}));
 /// ```
 #[macro_export]
 macro_rules! assert_always {
-    ($condition:expr, $message:literal$(, $details:expr)?) => {
+    ($condition:expr, $message:expr$(, $details:expr)?) => {
         $crate::assert_helper!(
             condition = $condition,
             $message,
@@ -127,7 +165,7 @@ macro_rules! assert_always {
         ::std::compile_error!(
 r#"Invalid syntax when calling macro `assert_always`.
 Example usage:
-    `assert_always!(condition_expr, "assertion message (static literal)", &details_json_value_expr)`
+    `assert_always!(condition_expr, "assertion message (const &'static str)", &details_json_value_expr)`
 "#
         );
     };
@@ -139,17 +177,21 @@ Example usage:
 /// # Example
 ///
 /// ```
-/// use serde_json::{json};
+/// use serde::Serialize;
 /// use antithesis_sdk::{assert_always_or_unreachable, random};
+///
+/// // Only serialized when the assertion emits; see assert_always.
+/// #[derive(Serialize)]
+/// struct Details { max_allowed: u64, actual: u64 }
 ///
 /// const MAX_ALLOWED: u64 = 100;
 /// let actual = random::get_random() % 100u64;
-/// let details = json!({"max_allowed": MAX_ALLOWED, "actual": actual});
+/// let details = Details { max_allowed: MAX_ALLOWED, actual };
 /// antithesis_sdk::assert_always_or_unreachable!(actual < MAX_ALLOWED, "Value in range", &details);
 /// ```
 #[macro_export]
 macro_rules! assert_always_or_unreachable {
-    ($condition:expr, $message:literal$(, $details:expr)?) => {
+    ($condition:expr, $message:expr$(, $details:expr)?) => {
         $crate::assert_helper!(
             condition = $condition,
             $message,
@@ -163,7 +205,7 @@ macro_rules! assert_always_or_unreachable {
         ::std::compile_error!(
 r#"Invalid syntax when calling macro `assert_always_or_unreachable`.
 Example usage:
-    `assert_always_or_unreachable!(condition_expr, "assertion message (static literal)", &details_json_value_expr)`
+    `assert_always_or_unreachable!(condition_expr, "assertion message (const &'static str)", &details_json_value_expr)`
 "#
         );
     };
@@ -176,17 +218,21 @@ Example usage:
 /// # Example
 ///
 /// ```
-/// use serde_json::{json};
+/// use serde::Serialize;
 /// use antithesis_sdk::{assert_sometimes, random};
+///
+/// // Only serialized when the assertion emits; see assert_always.
+/// #[derive(Serialize)]
+/// struct Details { max_allowed: u64, actual: u64 }
 ///
 /// const MAX_ALLOWED: u64 = 100;
 /// let actual = random::get_random() % 120u64;
-/// let details = json!({"max_allowed": MAX_ALLOWED, "actual": actual});
+/// let details = Details { max_allowed: MAX_ALLOWED, actual };
 /// antithesis_sdk::assert_sometimes!(actual > MAX_ALLOWED, "Value in range", &details);
 /// ```
 #[macro_export]
 macro_rules! assert_sometimes {
-    ($condition:expr, $message:literal$(, $details:expr)?) => {
+    ($condition:expr, $message:expr$(, $details:expr)?) => {
         $crate::assert_helper!(
             condition = $condition,
             $message,
@@ -200,7 +246,7 @@ macro_rules! assert_sometimes {
         ::std::compile_error!(
 r#"Invalid syntax when calling macro `assert_sometimes`.
 Example usage:
-    `assert_sometimes!(condition_expr, "assertion message (static literal)", &details_json_value_expr)`
+    `assert_sometimes!(condition_expr, "assertion message (const &'static str)", &details_json_value_expr)`
 "#
         );
     };
@@ -213,19 +259,23 @@ Example usage:
 /// # Example
 ///
 /// ```
-/// use serde_json::{json};
+/// use serde::Serialize;
 /// use antithesis_sdk::{assert_reachable, random};
+///
+/// // Only serialized when the assertion emits; see assert_always.
+/// #[derive(Serialize)]
+/// struct Details { max_allowed: u64, actual: u64 }
 ///
 /// const MAX_ALLOWED: u64 = 100;
 /// let actual = random::get_random() % 120u64;
-/// let details = json!({"max_allowed": MAX_ALLOWED, "actual": actual});
+/// let details = Details { max_allowed: MAX_ALLOWED, actual };
 /// if (actual > MAX_ALLOWED) {
 ///     antithesis_sdk::assert_reachable!("Value in range", &details);
 /// }
 /// ```
 #[macro_export]
 macro_rules! assert_reachable {
-    ($message:literal$(, $details:expr)?) => {
+    ($message:expr$(, $details:expr)?) => {
         $crate::assert_helper!(
             condition = true,
             $message,
@@ -239,7 +289,7 @@ macro_rules! assert_reachable {
         ::std::compile_error!(
 r#"Invalid syntax when calling macro `assert_reachable`.
 Example usage:
-    `assert_reachable!("assertion message (static literal)", &details_json_value_expr)`
+    `assert_reachable!("assertion message (const &'static str)", &details_json_value_expr)`
 "#
         );
     };
@@ -253,19 +303,23 @@ Example usage:
 /// # Example
 ///
 /// ```
-/// use serde_json::{json};
+/// use serde::Serialize;
 /// use antithesis_sdk::{assert_unreachable, random};
+///
+/// // Only serialized when the assertion emits; see assert_always.
+/// #[derive(Serialize)]
+/// struct Details { max_allowed: u64, actual: u64 }
 ///
 /// const MAX_ALLOWED: u64 = 100;
 /// let actual = random::get_random() % 120u64;
-/// let details = json!({"max_allowed": MAX_ALLOWED, "actual": actual});
+/// let details = Details { max_allowed: MAX_ALLOWED, actual };
 /// if (actual > 120u64) {
 ///     antithesis_sdk::assert_unreachable!("Value is above range", &details);
 /// }
 /// ```
 #[macro_export]
 macro_rules! assert_unreachable {
-    ($message:literal$(, $details:expr)?) => {
+    ($message:expr$(, $details:expr)?) => {
         $crate::assert_helper!(
             condition = false,
             $message,
@@ -279,7 +333,7 @@ macro_rules! assert_unreachable {
         ::std::compile_error!(
 r#"Invalid syntax when calling macro `assert_unreachable`.
 Example usage:
-    `assert_unreachable!("assertion message (static literal)", &details_json_value_expr)`
+    `assert_unreachable!("assertion message (const &'static str)", &details_json_value_expr)`
 "#
         );
     };
@@ -289,7 +343,10 @@ Example usage:
 #[doc(hidden)]
 #[macro_export]
 macro_rules! guidance_helper {
-    ($guidance_type:expr, $message:literal, $maximize:literal, $guidance_data:expr) => {
+    ($guidance_type:expr, $message:expr, $maximize:literal, $guidance_data:expr) => {
+        // `$message` must be const evaluable
+        const _: &str = $message;
+
         $crate::function!(FUN_NAME);
 
         use $crate::assert::guidance::{GuidanceCatalogInfo, GuidanceType};
@@ -327,7 +384,7 @@ macro_rules! guidance_helper {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! numeric_guidance_helper {
-    ($assert:path, $op:tt, $maximize:literal, $left:expr, $right:expr, $message:literal$(, $details:expr)?) => {{
+    ($assert:path, $op:tt, $maximize:literal, $left:expr, $right:expr, $message:expr$(, $details:expr)?) => {{
         let left = $left;
         let right = $right;
         let details = &$crate::serde_json::json!({});
@@ -370,16 +427,18 @@ macro_rules! numeric_guidance_helper {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! numeric_guidance_helper {
-    ($assert:path, $op:tt, $maximize:literal, $left:expr, $right:expr, $message:literal$(, $details:expr)?) => {
-        assert!($left $op $right, $message$(, $details)?);
-    };
+    ($assert:path, $op:tt, $maximize:literal, $left:expr, $right:expr, $message:expr$(, $details:expr)?) => {{
+        // `$message` must be const evaluable
+        const _: &str = $message;
+        $assert!($left $op $right, $message$(, $details)?);
+    }};
 }
 
 #[cfg(feature = "full")]
 #[doc(hidden)]
 #[macro_export]
 macro_rules! boolean_guidance_helper {
-    ($assert:path, $all:literal, {$($name:ident: $cond:expr),*}, $message:literal$(, $details:expr)?) => {{
+    ($assert:path, $all:literal, {$($name:ident: $cond:expr),*}, $message:expr$(, $details:expr)?) => {{
         let details = &$crate::serde_json::json!({});
         $(let details = $details;)?
         let mut details = details.clone();
@@ -400,7 +459,7 @@ macro_rules! boolean_guidance_helper {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! boolean_guidance_helper {
-    ($assert:path, $all:literal, {$($name:ident: $cond:expr),*}, $message:literal$(, $details:expr)?) => {{
+    ($assert:path, $all:literal, {$($name:ident: $cond:expr),*}, $message:expr$(, $details:expr)?) => {{
         let cond = {
             $(let $name = $cond;)*
             if $all { true $(&& $name)* } else { false $(|| $name)* }
@@ -410,16 +469,29 @@ macro_rules! boolean_guidance_helper {
 }
 
 /// `assert_always_greater_than(x, y, ...)` is mostly equivalent to `assert_always!(x > y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
+///
+/// Ensure that non-const-evaluable messages are rejected.
+///
+/// ```
+/// use serde_json::json;
+/// const MESSAGE: &str = concat!("x", " over y");
+/// antithesis_sdk::assert_always_greater_than!(2, 1, MESSAGE, &json!({}));
+/// ```
+///
+/// ```compile_fail
+/// use serde_json::json;
+/// antithesis_sdk::assert_always_greater_than!(2, 1, format!("{}", "x over y"), &json!({}));
+/// ```
 #[macro_export]
 macro_rules! assert_always_greater_than {
-    ($left:expr, $right:expr, $message:literal$(, $details:expr)?) => {
+    ($left:expr, $right:expr, $message:expr$(, $details:expr)?) => {
         $crate::numeric_guidance_helper!($crate::assert_always, >, false, $left, $right, $message$(, $details)?)
     };
     ($($rest:tt)*) => {
         ::std::compile_error!(
 r#"Invalid syntax when calling macro `assert_always_greater_than`.
 Example usage:
-    `assert_always_greater_than!(left_expr, right_expr, "assertion message (static literal)", &details_json_value_expr)`
+    `assert_always_greater_than!(left_expr, right_expr, "assertion message (const &'static str)", &details_json_value_expr)`
 "#
         );
     };
@@ -428,14 +500,14 @@ Example usage:
 /// `assert_always_greater_than_or_equal_to(x, y, ...)` is mostly equivalent to `assert_always!(x >= y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
 #[macro_export]
 macro_rules! assert_always_greater_than_or_equal_to {
-    ($left:expr, $right:expr, $message:literal$(, $details:expr)?) => {
+    ($left:expr, $right:expr, $message:expr$(, $details:expr)?) => {
         $crate::numeric_guidance_helper!($crate::assert_always, >=, false, $left, $right, $message$(, $details)?)
     };
     ($($rest:tt)*) => {
         ::std::compile_error!(
 r#"Invalid syntax when calling macro `assert_always_greater_than_or_equal_to`.
 Example usage:
-    `assert_always_greater_than_or_equal_to!(left_expr, right_expr, "assertion message (static literal)", &details_json_value_expr)`
+    `assert_always_greater_than_or_equal_to!(left_expr, right_expr, "assertion message (const &'static str)", &details_json_value_expr)`
 "#
         );
     };
@@ -444,14 +516,14 @@ Example usage:
 /// `assert_always_less_than(x, y, ...)` is mostly equivalent to `assert_always!(x < y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
 #[macro_export]
 macro_rules! assert_always_less_than {
-    ($left:expr, $right:expr, $message:literal$(, $details:expr)?) => {
+    ($left:expr, $right:expr, $message:expr$(, $details:expr)?) => {
         $crate::numeric_guidance_helper!($crate::assert_always, <, true, $left, $right, $message$(, $details)?)
     };
     ($($rest:tt)*) => {
         ::std::compile_error!(
 r#"Invalid syntax when calling macro `assert_always_less_than`.
 Example usage:
-    `assert_always_less_than!(left_expr, right_expr, "assertion message (static literal)", &details_json_value_expr)`
+    `assert_always_less_than!(left_expr, right_expr, "assertion message (const &'static str)", &details_json_value_expr)`
 "#
         );
     };
@@ -460,14 +532,14 @@ Example usage:
 /// `assert_always_less_than_or_equal_to(x, y, ...)` is mostly equivalent to `assert_always!(x <= y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
 #[macro_export]
 macro_rules! assert_always_less_than_or_equal_to {
-    ($left:expr, $right:expr, $message:literal$(, $details:expr)?) => {
+    ($left:expr, $right:expr, $message:expr$(, $details:expr)?) => {
         $crate::numeric_guidance_helper!($crate::assert_always, <=, true, $left, $right, $message$(, $details)?)
     };
     ($($rest:tt)*) => {
         ::std::compile_error!(
 r#"Invalid syntax when calling macro `assert_always_less_than_or_equal_to`.
 Example usage:
-    `assert_always_less_than_or_equal_to!(left_expr, right_expr, "assertion message (static literal)", &details_json_value_expr)`
+    `assert_always_less_than_or_equal_to!(left_expr, right_expr, "assertion message (const &'static str)", &details_json_value_expr)`
 "#
         );
     };
@@ -476,14 +548,14 @@ Example usage:
 /// `assert_sometimes_greater_than(x, y, ...)` is mostly equivalent to `assert_sometimes!(x > y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
 #[macro_export]
 macro_rules! assert_sometimes_greater_than {
-    ($left:expr, $right:expr, $message:literal$(, $details:expr)?) => {
+    ($left:expr, $right:expr, $message:expr$(, $details:expr)?) => {
         $crate::numeric_guidance_helper!($crate::assert_sometimes, >, true, $left, $right, $message$(, $details)?)
     };
     ($($rest:tt)*) => {
         ::std::compile_error!(
 r#"Invalid syntax when calling macro `assert_sometimes_greater_than`.
 Example usage:
-    `assert_sometimes_greater_than!(left_expr, right_expr, "assertion message (static literal)", &details_json_value_expr)`
+    `assert_sometimes_greater_than!(left_expr, right_expr, "assertion message (const &'static str)", &details_json_value_expr)`
 "#
         );
     };
@@ -492,14 +564,14 @@ Example usage:
 /// `assert_sometimes_greater_than_or_equal_to(x, y, ...)` is mostly equivalent to `assert_sometimes!(x >= y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
 #[macro_export]
 macro_rules! assert_sometimes_greater_than_or_equal_to {
-    ($left:expr, $right:expr, $message:literal$(, $details:expr)?) => {
+    ($left:expr, $right:expr, $message:expr$(, $details:expr)?) => {
         $crate::numeric_guidance_helper!($crate::assert_sometimes, >=, true, $left, $right, $message$(, $details)?)
     };
     ($($rest:tt)*) => {
         ::std::compile_error!(
 r#"Invalid syntax when calling macro `assert_sometimes_greater_than_or_equal_to`.
 Example usage:
-    `assert_sometimes_greater_than_or_equal_to!(left_expr, right_expr, "assertion message (static literal)", &details_json_value_expr)`
+    `assert_sometimes_greater_than_or_equal_to!(left_expr, right_expr, "assertion message (const &'static str)", &details_json_value_expr)`
 "#
         );
     };
@@ -508,14 +580,14 @@ Example usage:
 /// `assert_sometimes_less_than(x, y, ...)` is mostly equivalent to `assert_sometimes!(x < y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
 #[macro_export]
 macro_rules! assert_sometimes_less_than {
-    ($left:expr, $right:expr, $message:literal$(, $details:expr)?) => {
+    ($left:expr, $right:expr, $message:expr$(, $details:expr)?) => {
         $crate::numeric_guidance_helper!($crate::assert_sometimes, <, false, $left, $right, $message$(, $details)?)
     };
     ($($rest:tt)*) => {
         ::std::compile_error!(
 r#"Invalid syntax when calling macro `assert_sometimes_less_than`.
 Example usage:
-    `assert_sometimes_less_than!(left_expr, right_expr, "assertion message (static literal)", &details_json_value_expr)`
+    `assert_sometimes_less_than!(left_expr, right_expr, "assertion message (const &'static str)", &details_json_value_expr)`
 "#
         );
     };
@@ -524,14 +596,14 @@ Example usage:
 /// `assert_sometimes_less_than_or_equal_to(x, y, ...)` is mostly equivalent to `assert_sometimes!(x <= y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
 #[macro_export]
 macro_rules! assert_sometimes_less_than_or_equal_to {
-    ($left:expr, $right:expr, $message:literal$(, $details:expr)?) => {
+    ($left:expr, $right:expr, $message:expr$(, $details:expr)?) => {
         $crate::numeric_guidance_helper!($crate::assert_sometimes, <=, false, $left, $right, $message$(, $details)?)
     };
     ($($rest:tt)*) => {
         ::std::compile_error!(
 r#"Invalid syntax when calling macro `assert_sometimes_less_than_or_equal_to`.
 Example usage:
-    `assert_sometimes_less_than_or_equal_to!(left_expr, right_expr, "assertion message (static literal)", &details_json_value_expr)`
+    `assert_sometimes_less_than_or_equal_to!(left_expr, right_expr, "assertion message (const &'static str)", &details_json_value_expr)`
 "#
         );
     };
@@ -541,16 +613,29 @@ Example usage:
 /// - Antithesis has more visibility to the individual propositions.
 /// - There is no short-circuiting, so all of `x`, `y`, ... would be evaluated.
 /// - The assertion details would be merged with `{"a": x, "b": y, ...}`.
+///
+/// Ensure that non-const-evaluable messages are rejected.
+///
+/// ```
+/// use serde_json::json;
+/// const MESSAGE: &str = concat!("at least ", "one");
+/// antithesis_sdk::assert_always_some!({a: true, b: false}, MESSAGE, &json!({}));
+/// ```
+///
+/// ```compile_fail
+/// use serde_json::json;
+/// antithesis_sdk::assert_always_some!({a: true, b: false}, format!("{}", "at least one"), &json!({}));
+/// ```
 #[macro_export]
 macro_rules! assert_always_some {
-    ({$($($name:ident: $cond:expr),+ $(,)?)?}, $message:literal$(, $details:expr)?) => {
+    ({$($($name:ident: $cond:expr),+ $(,)?)?}, $message:expr$(, $details:expr)?) => {
         $crate::boolean_guidance_helper!($crate::assert_always, false, {$($($name: $cond),+)?}, $message$(, $details)?);
     };
     ($($rest:tt)*) => {
         ::std::compile_error!(
 r#"Invalid syntax when calling macro `assert_always_some`.
 Example usage:
-    `assert_always_some!({field1: cond1, field2: cond2, ...}, "assertion message (static literal)", &details_json_value_expr)`
+    `assert_always_some!({field1: cond1, field2: cond2, ...}, "assertion message (const &'static str)", &details_json_value_expr)`
 "#
         );
     };
@@ -562,14 +647,14 @@ Example usage:
 /// - The assertion details would be merged with `{"a": x, "b": y, ...}`.
 #[macro_export]
 macro_rules! assert_sometimes_all {
-    ({$($($name:ident: $cond:expr),+ $(,)?)?}, $message:literal$(, $details:expr)?) => {
+    ({$($($name:ident: $cond:expr),+ $(,)?)?}, $message:expr$(, $details:expr)?) => {
         $crate::boolean_guidance_helper!($crate::assert_sometimes, true, {$($($name: $cond),+)?}, $message$(, $details)?);
     };
     ($($rest:tt)*) => {
         ::std::compile_error!(
 r#"Invalid syntax when calling macro `assert_sometimes_all`.
 Example usage:
-    `assert_sometimes_all!({field1: cond1, field2: cond2, ...}, "assertion message (static literal)", &details_json_value_expr)`
+    `assert_sometimes_all!({field1: cond1, field2: cond2, ...}, "assertion message (const &'static str)", &details_json_value_expr)`
 "#
         );
     };
