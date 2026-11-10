@@ -2,6 +2,8 @@
 
 ## 0.4.0 - 2026-11-10
 
+The minimum supported `serde_json` is now 1.0.115 (was 1.0.25).
+
 Non-finite floats anywhere in details are now emitted as the strings `"NaN"`, `"Infinity"` or `"-Infinity"`.
 
 Numeric guidance now compares `left as f64 - right as f64`, the difference the
