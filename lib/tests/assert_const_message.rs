@@ -52,7 +52,10 @@ fn assert_const_message() {
         Err(e) => panic!("could not read SDK output: {e}"),
     }
 
-    assert!(did_register, "catalog registration entry (hit=false) missing");
+    assert!(
+        did_register,
+        "catalog registration entry (hit=false) missing"
+    );
     assert!(did_hit, "runtime assertion emission (hit=true) missing");
 
     common::env::restore_var(LOCAL_OUTPUT, prev_v);

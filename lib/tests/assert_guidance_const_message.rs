@@ -41,14 +41,19 @@ fn assert_guidance_const_message() {
                     assert_eq!(message, MESSAGE);
                     assert_eq!(id, MESSAGE);
                     assert_eq!(location.class, "assert_guidance_const_message");
-                    assert!(location.function.ends_with("::assert_guidance_const_message"));
+                    assert!(location
+                        .function
+                        .ends_with("::assert_guidance_const_message"));
                 }
             }
         }
         Err(e) => panic!("could not read SDK output: {e}"),
     }
 
-    assert!(did_register, "guidance catalog registration entry (hit=false) missing");
+    assert!(
+        did_register,
+        "guidance catalog registration entry (hit=false) missing"
+    );
     assert!(did_hit, "runtime guidance emission (hit=true) missing");
 
     common::env::restore_var(LOCAL_OUTPUT, prev_v);

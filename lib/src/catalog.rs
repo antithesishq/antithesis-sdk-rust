@@ -182,7 +182,9 @@ pub fn write<W: io::Write>(out: W) -> io::Result<()> {
 /// disagree about it.
 #[cfg(feature = "full")]
 pub(crate) fn registrations() -> impl Iterator<Item = Value> {
-    let guidance = assert::ANTITHESIS_GUIDANCE_CATALOG.iter().map(guidance::catalog_event);
+    let guidance = assert::ANTITHESIS_GUIDANCE_CATALOG
+        .iter()
+        .map(guidance::catalog_event);
     assertion_events().chain(guidance)
 }
 

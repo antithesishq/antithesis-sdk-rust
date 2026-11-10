@@ -7,13 +7,12 @@ use noop_handler::NoOpHandler;
 use rustc_version_runtime::version;
 
 #[cfg(feature = "full")]
-use voidstar_handler::VoidstarHandler;
-#[cfg(feature = "full")]
 use local_handler::LocalHandler;
+#[cfg(feature = "full")]
+use voidstar_handler::VoidstarHandler;
 
 #[cfg(feature = "full")]
 use once_cell::sync::Lazy;
-
 
 mod noop_handler;
 #[cfg(feature = "full")]
@@ -21,7 +20,6 @@ mod voidstar_handler;
 
 #[cfg(feature = "full")]
 mod local_handler;
-
 
 #[cfg(feature = "full")]
 #[derive(Serialize, Debug)]
@@ -79,9 +77,8 @@ pub(crate) static LIB_HANDLER: Lazy<Box<dyn LibHandler + Sync + Send>> = Lazy::n
     handler
 });
 
-
 #[cfg(not(feature = "full"))]
-pub(crate) static LIB_HANDLER: NoOpHandler = NoOpHandler{};
+pub(crate) static LIB_HANDLER: NoOpHandler = NoOpHandler {};
 
 pub(crate) trait LibHandler {
     fn output(&self, value: &str) -> Result<(), Error>;

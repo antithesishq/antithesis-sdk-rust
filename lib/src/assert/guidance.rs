@@ -26,7 +26,9 @@ pub struct Guard<const MAX: bool> {
 
 impl<const MAX: bool> Guard<MAX> {
     pub const fn init() -> Self {
-        Self { mark: AtomicU64::new(UNSET) }
+        Self {
+            mark: AtomicU64::new(UNSET),
+        }
     }
 
     /// Whether `gap` improves on the watermark, taking it if so.
@@ -203,7 +205,10 @@ pub fn numeric_guidance_raw<T: Diff<Output = f64> + Serialize + Copy>(
         if !finite_operands(&left, &right, &id) || !should_emit(&id, maximize, left.diff(right)) {
             return;
         }
-        let operands = crate::details::NumericOperands { left: &left, right: &right };
+        let operands = crate::details::NumericOperands {
+            left: &left,
+            right: &right,
+        };
         match crate::details::guidance(&operands, &id) {
             Some(data) => data,
             None => return,
@@ -285,9 +290,21 @@ pub fn guidance_impl<'a>(
     guidance_data: Value,
     hit: bool,
 ) {
-    let location = AntithesisLocationInfo { class, function, file, begin_line, begin_column };
+    let location = AntithesisLocationInfo {
+        class,
+        function,
+        file,
+        begin_line,
+        begin_column,
+    };
     let guidance = GuidanceInfo {
-        guidance_type, message, id, location, maximize, guidance_data, hit
+        guidance_type,
+        message,
+        id,
+        location,
+        maximize,
+        guidance_data,
+        hit,
     };
 
     internal::dispatch_output(&json!({ "antithesis_guidance": guidance }));

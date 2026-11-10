@@ -1,5 +1,3 @@
-use std::u64;
-
 use crate::internal;
 
 /// Returns a u64 value chosen by Antithesis.

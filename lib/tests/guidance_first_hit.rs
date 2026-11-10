@@ -13,7 +13,8 @@ use common::SDKInput;
 #[test]
 fn first_hit_emits_even_when_its_gap_overflows() {
     let output_path = std::env::temp_dir().join(format!(
-        "antithesis-guidance-first-hit-{}.jsonl", std::process::id()
+        "antithesis-guidance-first-hit-{}.jsonl",
+        std::process::id()
     ));
     let _ = std::fs::remove_file(&output_path);
     let output_file = output_path.to_str().unwrap();
@@ -38,7 +39,10 @@ fn first_hit_emits_even_when_its_gap_overflows() {
                 )
             })
             .count();
-        assert_eq!(hits, 1, "{message:?} should have emitted its first hit exactly once");
+        assert_eq!(
+            hits, 1,
+            "{message:?} should have emitted its first hit exactly once"
+        );
     }
     common::env::restore_var(LOCAL_OUTPUT, prev_v);
     std::fs::remove_file(output_path).unwrap();

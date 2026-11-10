@@ -11,7 +11,8 @@ use crate::common::{AntithesisGuidance, GuidanceType};
 #[test]
 fn assert_guidance() {
     let output_path = std::env::temp_dir().join(format!(
-        "antithesis-assert-guidance-{}.jsonl", std::process::id()
+        "antithesis-assert-guidance-{}.jsonl",
+        std::process::id()
     ));
     let _ = std::fs::remove_file(&output_path);
     let output_file = output_path.to_str().unwrap();
@@ -55,9 +56,7 @@ fn assert_guidance() {
                     assert!(location.begin_column >= 0);
                     assert_eq!(location.class, "assert_guidance");
                     assert!(location.function.ends_with("::assert_guidance"));
-                    assert!(location
-                        .file
-                        .ends_with("tests/assert_guidance.rs"));
+                    assert!(location.file.ends_with("tests/assert_guidance.rs"));
                 }
                 println!("{:?}", obj);
             }

@@ -80,7 +80,10 @@ fn write_matches_assertions() {
 
     // Every line is an assertion catalog registration; guidance is init's
     // business and stays out of write().
-    let assertions: Vec<&Value> = lines.iter().filter_map(|v| v.get("antithesis_assert")).collect();
+    let assertions: Vec<&Value> = lines
+        .iter()
+        .filter_map(|v| v.get("antithesis_assert"))
+        .collect();
     assert_eq!(assertions.len(), lines.len());
     assert_eq!(assertions.len(), catalog::assertions().count());
     for a in &assertions {
@@ -88,7 +91,10 @@ fn write_matches_assertions() {
     }
 
     // Same order as assertions(): the linker's, whatever it is.
-    let written_messages: Vec<&str> = assertions.iter().map(|a| a["message"].as_str().unwrap()).collect();
+    let written_messages: Vec<&str> = assertions
+        .iter()
+        .map(|a| a["message"].as_str().unwrap())
+        .collect();
     let listed_messages: Vec<&str> = catalog::assertions().map(|a| a.message).collect();
     assert_eq!(written_messages, listed_messages);
 
@@ -113,7 +119,12 @@ fn kind_display_type_matches_serialized_events() {
     assert!(!serialized.is_empty());
     for a in &serialized {
         let e = assertion(a["message"].as_str().unwrap());
-        assert_eq!(a["display_type"], e.kind.display_type(), "for {:?}", e.message);
+        assert_eq!(
+            a["display_type"],
+            e.kind.display_type(),
+            "for {:?}",
+            e.message
+        );
     }
     // Every kind is exercised by the declarations above.
     let kinds: std::collections::HashSet<AssertionKind> =
@@ -145,9 +156,13 @@ fn write_matches_init_emission() {
     assert_eq!(from_init_assertions, written);
 
     // What remains is the guidance the numeric macro also registers.
-    let guidance: Vec<Value> = init_lines.map(|l| serde_json::from_str(l).unwrap()).collect();
+    let guidance: Vec<Value> = init_lines
+        .map(|l| serde_json::from_str(l).unwrap())
+        .collect();
     assert!(!guidance.is_empty());
-    assert!(guidance.iter().all(|g| g.get("antithesis_guidance").is_some()));
+    assert!(guidance
+        .iter()
+        .all(|g| g.get("antithesis_guidance").is_some()));
     assert!(guidance
         .iter()
         .any(|g| g["antithesis_guidance"]["message"] == "catalog-test: numeric always"));

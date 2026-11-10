@@ -74,7 +74,7 @@ pub mod catalog;
 
 /// The lifecycle module contains functions which inform the Antithesis
 /// environment that particular test phases or milestones have been reached.
-/// 
+///
 /// The constant [const@LOCAL_OUTPUT] is associated with local logging, which is
 /// one of the
 /// [local execution](https://antithesis.com/docs/using_antithesis/sdk/rust/#sdk-runtime-behavior)
@@ -176,13 +176,13 @@ use once_cell::sync::Lazy;
 /// to a file  that can be created and written to when running locally.  If this
 /// environment variable is not present at runtime, then no assertion and
 /// lifecycle output will be attempted.
-/// 
+///
 /// This allows you to make use of the Antithesis assertions module in your
 /// regular testing, or even in production. In particular, very few assertions
 /// frameworks offer a convenient way to define
 /// [Sometimes assertions](https://antithesis.com/docs/best_practices/sometimes_assertions/),
 /// but they can be quite useful even outside Antithesis.
-/// 
+///
 /// See also the documentation for
 /// [local execution](https://antithesis.com/docs/using_antithesis/sdk/rust/#sdk-runtime-behavior).
 pub use crate::internal::LOCAL_OUTPUT;

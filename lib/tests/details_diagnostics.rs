@@ -149,10 +149,13 @@ fn diagnostics_describe_only_the_emitted_details() {
         assert_eq!(hits.len(), 1, "{name}");
         assert_eq!(hits[0]["antithesis_assert"]["details"], expected, "{name}");
         if name == "infinite operands" || name == "nan operand" {
-            assert!(!events.iter().any(|event| {
-                event["antithesis_guidance"]["id"] == name
-                    && event["antithesis_guidance"]["hit"] == true
-            }), "{name}");
+            assert!(
+                !events.iter().any(|event| {
+                    event["antithesis_guidance"]["id"] == name
+                        && event["antithesis_guidance"]["hit"] == true
+                }),
+                "{name}"
+            );
         }
         let warnings: Vec<_> = events
             .iter()
