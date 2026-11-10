@@ -5,6 +5,8 @@ This library provides methods for Rust programs to configure the [Antithesis](ht
 * Randomness functions for requesting both structured and unstructured randomness from the Antithesis platform.
 * Lifecycle functions that inform the Antithesis environment that particular test phases or milestones have been reached.
 
+For tooling, the `catalog` module lists the assertions compiled into a binary without running it.
+
 For general usage guidance see the [Antithesis Rust SDK Documentation](https://antithesis.com/docs/using_antithesis/sdk/rust/)
 
 ### Notes

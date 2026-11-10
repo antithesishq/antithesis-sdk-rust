@@ -1,23 +1,38 @@
-use crate::internal;
+#[cfg(feature = "full")]
+use crate::{details, internal};
 use serde::Serialize;
-use serde_json::{json, Value};
+#[cfg(feature = "full")]
+use serde_json::{json, Map, Value};
 
+#[cfg(feature = "full")]
 #[derive(Serialize, Debug)]
-struct AntithesisSetupData<'a, 'b> {
+struct AntithesisSetupData<'a> {
     status: &'a str,
-    details: &'b Value,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    details: Option<Map<String, Value>>,
 }
 
+#[cfg(feature = "full")]
 #[derive(Serialize, Debug)]
 struct SetupCompleteData<'a> {
-    antithesis_setup: AntithesisSetupData<'a, 'a>,
+    antithesis_setup: AntithesisSetupData<'a>,
 }
 
-/// Indicates to Antithesis that setup has completed. Call this function when your system and workload are fully initialized.
-/// After this function is called, Antithesis will take a snapshot of your system and begin [injecting faults]( https://antithesis.com/docs/environment/fault_injection/).
+/// Indicates to Antithesis that setup has completed. Call this function when
+/// your system and workload are fully initialized. After this function is
+/// called, Antithesis will take a snapshot of your system and begin
+/// [injecting faults]( https://antithesis.com/docs/environment/fault_injection/).
 ///
-/// Calling this function multiple times or from multiple processes will have no effect.
-/// Antithesis will treat the first time any process called this function as the moment that the setup was completed.
+/// Calling this function multiple times or from multiple processes will have no
+/// effect. Antithesis will treat the first time any process called this
+/// function as the moment that the setup was completed.
+///
+/// Details may be any borrowed value implementing `Serialize`. Objects are
+/// preserved; other non-null JSON values are wrapped under `"value"`, for
+/// example `3` becomes `{"value": 3}`. Pass `&()` or `&Value::Null` for no
+/// details; an explicit empty object is preserved. Serialization errors emit an
+/// `antithesis_error` message and omit details; the setup event is still
+/// emitted. With the `full` feature disabled, details are not serialized.
 ///
 /// # Example
 ///
@@ -34,18 +49,31 @@ struct SetupCompleteData<'a> {
 ///
 /// lifecycle::setup_complete(&startup_data);
 /// ```
-pub fn setup_complete(details: &Value) {
-    let status = "complete";
-    let antithesis_setup = AntithesisSetupData::<'_, '_> { status, details };
-
-    let setup_complete_data = SetupCompleteData { antithesis_setup };
-
-    internal::dispatch_output(&setup_complete_data)
+pub fn setup_complete<T: Serialize + ?Sized>(details: &T) {
+    #[cfg(feature = "full")]
+    {
+        let antithesis_setup = AntithesisSetupData {
+            status: "complete",
+            details: details::object(details, "setup_complete"),
+        };
+        internal::dispatch_output(&SetupCompleteData { antithesis_setup });
+    }
+    #[cfg(not(feature = "full"))]
+    let _ = details;
 }
 
-/// Indicates to Antithesis that a certain event has been reached. It sends a structured log message to Antithesis that you may later use to aid debugging.
+/// Indicates to Antithesis that a certain event has been reached. It sends a
+/// structured log message to Antithesis that you may later use to aid
+/// debugging.
 ///
-/// In addition to ``details``, you also provide ``name``, which is the name of the event that you are logging.
+/// In addition to ``details``, you also provide ``name``, which is the name of
+/// the event that you are logging.
+///
+/// Details may be any borrowed value implementing `Serialize`. Objects are
+/// preserved; other non-null JSON values are wrapped under `"value"`, for
+/// example `3` becomes `{"value": 3}`. Null and serialization errors produce an
+/// empty event body `{}`. Serialization errors also emit an `antithesis_error`
+/// message. With the `full` feature disabled, details are not serialized.
 ///
 /// # Example
 ///
@@ -60,67 +88,15 @@ pub fn setup_complete(details: &Value) {
 ///
 /// lifecycle::send_event("start_day", &info_value);
 /// ```
-pub fn send_event(name: &str, details: &Value) {
+pub fn send_event<T: Serialize + ?Sized>(name: &str, details: &T) {
     // The name is passed through verbatim, like every other SDK: renaming
     // or trimming here would make the same program emit different events
     // depending on which SDK it was written against.
-    let json_event = json!({ name: details });
-    internal::dispatch_output(&json_event)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn setup_complete_without_details() {
-        eprintln!("setup_complete");
-        let details: Value = json!({});
-        setup_complete(&details);
+    #[cfg(feature = "full")]
+    {
+        let json_event = json!({ name: details::object(details, name).unwrap_or_default() });
+        internal::dispatch_output(&json_event);
     }
-
-    #[test]
-    fn setup_complete_with_details() {
-        let details: Value = json!({
-            "name": "Meow Cat",
-            "age": 11,
-            "phones": [
-                "+1 2126581356",
-                "+1 2126581384"
-            ]
-        });
-        setup_complete(&details);
-    }
-
-    #[test]
-    fn send_event_without_details() {
-        let details: Value = json!({});
-        send_event("my event", &details);
-    }
-
-    #[test]
-    fn send_event_with_details() {
-        let details: Value = json!({
-            "name": "Tweety Bird",
-            "age": 4,
-            "phones": [
-                "+1 9734970340"
-            ]
-        });
-        send_event("my event 2", &details);
-    }
-
-    #[test]
-    fn send_event_unnamed_without_details() {
-        let details: Value = json!({});
-        send_event("", &details);
-    }
-
-    #[test]
-    fn send_event_unnamed_with_details() {
-        let details: Value = json!({
-            "color": "red"
-        });
-        send_event("   ", &details);
-    }
+    #[cfg(not(feature = "full"))]
+    let _ = (name, details);
 }

@@ -22,6 +22,7 @@ pub struct AntithesisSdk {
 #[derive(Deserialize, Debug)]
 pub struct AntithesisSetup {
     pub status: String,
+    #[serde(default)]
     pub details: Value,
 }
 
@@ -44,6 +45,7 @@ pub struct AntithesisAssert {
     pub id: String,
     pub message: String,
     pub location: Location,
+    #[serde(default)]
     pub details: Value,
 }
 
@@ -54,6 +56,8 @@ pub struct AntithesisGuidance {
     pub id: String,
     pub location: Location,
     pub maximize: bool,
+    // Absent on a declaration, which carries no data.
+    #[serde(default)]
     pub guidance_data: Value,
     pub hit: bool,
 }

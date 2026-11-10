@@ -1,16 +1,37 @@
-/// The assert module enables defining [test properties](https://antithesis.com/docs/properties_assertions/properties/)
-/// about your program or [workload](https://antithesis.com/docs/test_templates/first_test/).
+/// The assert module enables defining
+/// [test properties](https://antithesis.com/docs/properties_assertions/properties/)
+/// about your program or
+/// [workload](https://antithesis.com/docs/test_templates/first_test/).
 ///
-/// The constant [const@LOCAL_OUTPUT] is associated with local logging, which is one of the [local execution](https://antithesis.com/docs/using_antithesis/sdk/rust/#sdk-runtime-behavior) modes.
+/// The constant [const@LOCAL_OUTPUT] is associated with local logging, which is
+/// one of the
+/// [local execution](https://antithesis.com/docs/using_antithesis/sdk/rust/#sdk-runtime-behavior)
+/// modes.
 ///
-/// Each macro/function in this module takes a parameter called ``message``, which is
-/// a string literal identifier used to aggregate assertions.
-/// Antithesis generates one test property per unique ``message`` This test property will be named ``message`` in the [triage report](https://antithesis.com/reports/example-triage-report).
+/// Each macro/function in this module takes a parameter called ``message``,
+/// which is a string literal identifier used to aggregate assertions.
+/// Antithesis generates one test property per unique ``message`` This test
+/// property will be named ``message`` in the
+/// [triage report](https://antithesis.com/reports/example-triage-report).
 ///
-/// Each macro/function also takes a parameter called ``details``, which is a key-value map of optional additional information provided by the user to add context for assertion failures.
-/// The information that is logged will appear in the ``logs`` section of a [triage report](https://antithesis.com/reports/example-triage-report).
-/// Normally the values in ``details`` are evaluated at runtime.
+/// Each macro/function also takes a parameter called ``details``, which is a
+/// key-value map of optional additional information provided by the user to add
+/// context for assertion failures. The information that is logged will appear
+/// in the ``logs`` section of a
+/// [triage report](https://antithesis.com/reports/example-triage-report).
+/// Normally the values in ``details`` are evaluated at runtime. Details may be
+/// borrowed structs or maps implementing [`serde::Serialize`]; serialization
+/// happens only when an assertion evaluation is emitted. Constructing the
+/// details argument still happens on every call, so `json!` at the call site is
+/// not deferred. Omitted details and values that serialize to null are omitted
+/// from the event; explicit empty objects are preserved. Other JSON values are
+/// wrapped in an object under `"value"`, for example `3` becomes
+/// `{"value": 3}`. Serialization errors emit an `antithesis_error` message and
+/// omit details without suppressing the assertion.
 pub mod assert;
+
+#[doc(hidden)]
+pub mod details;
 
 // External crates used in assertion macros
 #[doc(hidden)]
@@ -23,26 +44,64 @@ pub use once_cell;
 #[cfg(feature = "full")]
 pub use serde_json;
 
+/// The catalog module gives read access to the assertion catalog compiled
+/// into this binary: every assertion macro call site linked into the
+/// program, whether or not that code ever runs.
+///
+/// It exists for tooling rather than for workloads: comparing the assertions
+/// a binary declares against the ones a local test suite encounters, failing
+/// CI when a change silently drops an assertion, or checking an inventory of
+/// test properties into the repository. Workloads use [`assert`](mod@crate::assert)
+/// and [`random`] instead and never need this module.
+///
+/// [`catalog::assertions()`] lists the assertions as values.
+/// [`catalog::write()`] writes them as the same JSON lines, in the same
+/// order, that [`antithesis_init()`] emits for them, without init having
+/// run. A binary can expose its own catalog with a few lines:
+///
+/// ```no_run
+/// use std::io::stdout;
+///
+/// fn main() -> std::io::Result<()> {
+///     if std::env::args().any(|a| a == "--antithesis-catalog") {
+///         return antithesis_sdk::catalog::write(stdout());
+///     }
+///     // ... the actual program ...
+///     Ok(())
+/// }
+/// ```
+pub mod catalog;
+
 /// The lifecycle module contains functions which inform the Antithesis
 /// environment that particular test phases or milestones have been reached.
 /// 
-/// The constant [const@LOCAL_OUTPUT] is associated with local logging, which is one of the [local execution](https://antithesis.com/docs/using_antithesis/sdk/rust/#sdk-runtime-behavior) modes.
+/// The constant [const@LOCAL_OUTPUT] is associated with local logging, which is
+/// one of the
+/// [local execution](https://antithesis.com/docs/using_antithesis/sdk/rust/#sdk-runtime-behavior)
+/// modes.
 pub mod lifecycle;
 
-/// The random module provides functions that request both structured and unstructured randomness from the Antithesis environment.
+/// The random module provides functions that request both structured and
+/// unstructured randomness from the Antithesis environment.
 ///
-/// These functions should not be used to seed a conventional PRNG, and should not have their return values stored and used to make a decision at a later time.
-/// Doing either of these things makes it much harder for the Antithesis platform to control the history of your program's execution, and also makes it harder for Antithesis to learn which inputs provided at which times are most fruitful.
-/// Instead, you should call a function from the random package every time your program or [workload](https://antithesis.com/docs/test_templates/first_test/) needs to make a decision, at the moment that you need to make the decision.
+/// These functions should not be used to seed a conventional PRNG, and should
+/// not have their return values stored and used to make a decision at a later
+/// time. Doing either of these things makes it much harder for the Antithesis
+/// platform to control the history of your program's execution, and also makes
+/// it harder for Antithesis to learn which inputs provided at which times are
+/// most fruitful. Instead, you should call a function from the random package
+/// every time your program or
+/// [workload](https://antithesis.com/docs/test_templates/first_test/) needs to
+/// make a decision, at the moment that you need to make the decision.
 ///
-/// These functions are also safe to call outside the Antithesis environment, where
-/// they will fall back on the rust std library implementation.
+/// These functions are also safe to call outside the Antithesis environment,
+/// where they will fall back on the rust std library implementation.
 ///
 /// # `rand` Integration
 ///
-/// [`AntithesisRng`](crate::random::AntithesisRng) plugs the same Antithesis-controlled randomness into the
-/// `rand` ecosystem. Enable the feature flag that matches the version of `rand`
-/// your project already uses:
+/// [`AntithesisRng`](crate::random::AntithesisRng) plugs the same
+/// Antithesis-controlled randomness into the `rand` ecosystem. Enable the
+/// feature flag that matches the version of `rand` your project already uses:
 ///
 /// | Your `rand` version  | Feature flag               | Trait implemented            |
 /// |----------------------|----------------------------|------------------------------|
@@ -56,7 +115,7 @@ pub mod lifecycle;
 ///
 /// ```toml
 /// [dependencies]
-/// antithesis_sdk = { version = "0.2", features = ["rand_v0_9"] }
+/// antithesis_sdk = { version = "0.3", features = ["rand_v0_9"] }
 /// rand = "0.9"
 /// ```
 ///
@@ -69,13 +128,13 @@ mod internal;
 /// Convenience to import all macros and functions
 pub mod prelude;
 
-/// Global initialization logic. Performs registration of the
-/// Antithesis assertion catalog. This should be invoked as early as
-/// possible during program execution. It is recommended to call it immediately in ``main``.
+/// Global initialization logic. Performs registration of the Antithesis
+/// assertion catalog. This should be invoked as early as possible during
+/// program execution. It is recommended to call it immediately in ``main``.
 ///
-/// If called more than once, only the first call will result
-/// in the assertion catalog being registered.  If never called,
-/// the assertion catalog will be registered when it encounters the first assertion at runtime.
+/// If called more than once, only the first call will result in the assertion
+/// catalog being registered.  If never called, the assertion catalog will be
+/// registered when it encounters the first assertion at runtime.
 ///
 /// Example:
 ///
@@ -111,17 +170,19 @@ fn init() {}
 #[cfg(feature = "full")]
 use once_cell::sync::Lazy;
 
-/// A constant provided by the SDK to report the location of logged output when run locally.
-/// This constant is the name of an environment variable ``ANTITHESIS_SDK_LOCAL_OUTPUT``.
-/// ``ANTITHESIS_SDK_LOCAL_OUTPUT`` is a path to a file 
-/// that can be created and written to when running locally.  If this environment variable is not present at
-/// runtime, then no assertion and lifecycle output will be attempted.
+/// A constant provided by the SDK to report the location of logged output when
+/// run locally. This constant is the name of an environment variable
+/// ``ANTITHESIS_SDK_LOCAL_OUTPUT``. ``ANTITHESIS_SDK_LOCAL_OUTPUT`` is a path
+/// to a file  that can be created and written to when running locally.  If this
+/// environment variable is not present at runtime, then no assertion and
+/// lifecycle output will be attempted.
 /// 
-/// This allows you to make use of the Antithesis assertions module
-/// in your regular testing, or even in production. In particular,
-/// very few assertions frameworks offer a convenient way to define
-/// [Sometimes assertions](https://antithesis.com/docs/best_practices/sometimes_assertions/), but they can be quite useful even outside
-/// Antithesis.
+/// This allows you to make use of the Antithesis assertions module in your
+/// regular testing, or even in production. In particular, very few assertions
+/// frameworks offer a convenient way to define
+/// [Sometimes assertions](https://antithesis.com/docs/best_practices/sometimes_assertions/),
+/// but they can be quite useful even outside Antithesis.
 /// 
-/// See also the documentation for [local execution](https://antithesis.com/docs/using_antithesis/sdk/rust/#sdk-runtime-behavior).
+/// See also the documentation for
+/// [local execution](https://antithesis.com/docs/using_antithesis/sdk/rust/#sdk-runtime-behavior).
 pub use crate::internal::LOCAL_OUTPUT;

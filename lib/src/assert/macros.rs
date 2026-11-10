@@ -41,7 +41,7 @@ macro_rules! assert_helper {
 
         // Force evaluation of expressions.
         let condition = $condition;
-        let details = &$crate::serde_json::json!({});
+        let details = &$crate::serde_json::Value::Null;
         $(let details = $details;)?
 
         $crate::function!(FUN_NAME);
@@ -103,8 +103,10 @@ macro_rules! assert_helper {
     }};
 }
 
-/// Assert that ``condition`` is true every time this function is called, **and** that it is
-/// called at least once. The corresponding test property will be viewable in the ``Antithesis SDK: Always`` group of your triage report.
+/// Assert that ``condition`` is true every time this function is called,
+/// **and** that it is called at least once. The corresponding test property
+/// will be viewable in the ``Antithesis SDK: Always`` group of your triage
+/// report.
 ///
 /// # Example
 ///
@@ -112,10 +114,9 @@ macro_rules! assert_helper {
 /// use serde::Serialize;
 /// use antithesis_sdk::{assert_always, random};
 ///
-/// // Details can be any Serialize type, and are only serialized when the
-/// // assertion actually emits — on a sparse sample of passing and failing
-/// // evaluations. A plain struct of values and references like this
-/// // therefore costs nothing on the hot path.
+/// // Details can be any Serialize type; non-null scalars and arrays are
+/// // wrapped under "value".
+/// // A borrowed struct avoids serialization on evaluations that are not emitted.
 /// #[derive(Serialize)]
 /// struct Details<'a> {
 ///     max_allowed: u64,
@@ -171,8 +172,10 @@ Example usage:
     };
 }
 
-/// Assert that ``condition`` is true every time this function is called. The corresponding test property will pass even if the assertion is never encountered.
-/// This test property will be viewable in the ``Antithesis SDK: Always`` group of your triage report.
+/// Assert that ``condition`` is true every time this function is called. The
+/// corresponding test property will pass even if the assertion is never
+/// encountered. This test property will be viewable in the
+/// ``Antithesis SDK: Always`` group of your triage report.
 ///
 /// # Example
 ///
@@ -211,9 +214,10 @@ Example usage:
     };
 }
 
-/// Assert that ``condition`` is true at least one time that this function was called.
-/// (If the assertion is never encountered, the test property will therefore fail.)
-/// This test property will be viewable in the ``Antithesis SDK: Sometimes`` group.
+/// Assert that ``condition`` is true at least one time that this function was
+/// called. (If the assertion is never encountered, the test property will
+/// therefore fail.) This test property will be viewable in the
+/// ``Antithesis SDK: Sometimes`` group.
 ///
 /// # Example
 ///
@@ -252,9 +256,10 @@ Example usage:
     };
 }
 
-/// Assert that a line of code is reached at least once.
-/// The corresponding test property will pass if this macro is ever called. (If it is never called the test property will therefore fail.)
-/// This test property will be viewable in the ``Antithesis SDK: Reachablity assertions`` group.
+/// Assert that a line of code is reached at least once. The corresponding test
+/// property will pass if this macro is ever called. (If it is never called the
+/// test property will therefore fail.) This test property will be viewable in
+/// the ``Antithesis SDK: Reachablity assertions`` group.
 ///
 /// # Example
 ///
@@ -295,10 +300,10 @@ Example usage:
     };
 }
 
-/// Assert that a line of code is never reached.
-/// The corresponding test property will fail if this macro is ever called.
-/// (If it is never called the test property will therefore pass.)
-/// This test property will be viewable in the ``Antithesis SDK: Reachablity assertions`` group.
+/// Assert that a line of code is never reached. The corresponding test property
+/// will fail if this macro is ever called. (If it is never called the test
+/// property will therefore pass.) This test property will be viewable in the
+/// ``Antithesis SDK: Reachablity assertions`` group.
 ///
 /// # Example
 ///
@@ -339,6 +344,8 @@ Example usage:
     };
 }
 
+/// Registers the guidance in the catalog and emits one hit with
+/// `$guidance_data`, an inspected `serde_json::Value`.
 #[cfg(feature = "full")]
 #[doc(hidden)]
 #[macro_export]
@@ -387,38 +394,26 @@ macro_rules! numeric_guidance_helper {
     ($assert:path, $op:tt, $maximize:literal, $left:expr, $right:expr, $message:expr$(, $details:expr)?) => {{
         let left = $left;
         let right = $right;
-        let details = &$crate::serde_json::json!({});
+        let details = &$crate::serde_json::Value::Null;
         $(let details = $details;)?
-        let mut details = details.clone();
-        details["left"] = left.into();
-        details["right"] = right.into();
+        let details = $crate::details::WithGuidance {
+            details,
+            guidance: || $crate::details::NumericOperands { left: &left, right: &right },
+        };
         $assert!(left $op right, $message, &details);
 
-        let guidance_data = $crate::serde_json::json!({
-            "left": left,
-            "right": right,
-        });
-        // TODO: Right now it seems to be impossible for this macro to use the returned
-        // type of `diff` to instanciate the `T` in `Guard<T>`, which has to be
-        // explicitly provided for the static variable `GUARD`.
-        // Instead, we currently fix `T` to be `f64`, and ensure all implementations of `Diff` returns `f64`.
-        // Here are some related language limitations:
-        // - Although `typeof` is a reserved keyword in Rust, it is never implemented. See <https://stackoverflow.com/questions/64890774>.
-        // - Rust does not, and explicitly would not (see https://doc.rust-lang.org/reference/items/static-items.html#statics--generics), support generic static variable.
-        // - Type inference is not performed for static variable, i.e. `Guard<_>` is not allowed.
-        // - Some form of existential type can help, but that's only available in nightly Rust under feature `type_alias_impl_trait`.
-        //
-        // Other approaches I can think of either requires dynamic type tagging that has
-        // runtime overhead, or requires the user of the macro to explicitly provide the type,
-        // which is really not ergonomic and deviate from the APIs from other SDKs.
+        // Every `Diff` impl converts into f64
         let diff = $crate::assert::guidance::Diff::diff(&left, right);
-        type Guard<T> = $crate::assert::guidance::Guard<$maximize, T>;
-        // TODO: Waiting for [type_alias_impl_trait](https://github.com/rust-lang/rust/issues/63063) to stabilize...
-        // type Distance = impl Minimal;
-        type Distance = f64;
-        static GUARD: Guard<Distance> = Guard::init();
-        if GUARD.should_emit(diff) {
-            $crate::guidance_helper!($crate::assert::guidance::GuidanceType::Numeric, $message, $maximize, guidance_data);
+        static GUARD: $crate::assert::guidance::Guard<$maximize> =
+            $crate::assert::guidance::Guard::init();
+        if $crate::assert::guidance::finite_operands(&left, &right, $message)
+            && GUARD.should_emit(diff) {
+            let operands = $crate::details::NumericOperands { left: &left, right: &right };
+            // Inspecting the operands is the only step that depends on their
+            // type; the packet is built and emitted inside the SDK crate.
+            if let Some(guidance_data) = $crate::details::guidance(&operands, $message) {
+                $crate::guidance_helper!($crate::assert::guidance::GuidanceType::Numeric, $message, $maximize, guidance_data);
+            }
         }
     }};
 }
@@ -439,18 +434,22 @@ macro_rules! numeric_guidance_helper {
 #[macro_export]
 macro_rules! boolean_guidance_helper {
     ($assert:path, $all:literal, {$($name:ident: $cond:expr),*}, $message:expr$(, $details:expr)?) => {{
-        let details = &$crate::serde_json::json!({});
+        let details = &$crate::serde_json::Value::Null;
         $(let details = $details;)?
-        let mut details = details.clone();
         let (cond, guidance_data) = {
             $(let $name = $cond;)*
-            $(details[::std::stringify!($name)] = $name.into();)*
             (
                 if $all { true $(&& $name)* } else { false $(|| $name)* },
                 $crate::serde_json::json!({$(::std::stringify!($name): $name),*})
             )
         };
+        let details = $crate::details::WithGuidance {
+            details,
+            guidance: || guidance_data.clone(),
+        };
         $assert!(cond, $message, &details);
+        // Built from `bool`s only, so the details inspection has nothing to
+        // find or replace in it: emitted as is.
         $crate::guidance_helper!($crate::assert::guidance::GuidanceType::Boolean, $message, $all, guidance_data);
     }};
 }
@@ -468,7 +467,10 @@ macro_rules! boolean_guidance_helper {
     }};
 }
 
-/// `assert_always_greater_than(x, y, ...)` is mostly equivalent to `assert_always!(x > y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
+/// `assert_always_greater_than(x, y, ...)` is mostly equivalent to
+/// `assert_always!(x > y, ...)`, except Antithesis has more visibility to the
+/// value of `x` and `y`, and the assertion details would be merged with
+/// `{"left": x, "right": y}`.
 ///
 /// Ensure that non-const-evaluable messages are rejected.
 ///
@@ -497,7 +499,10 @@ Example usage:
     };
 }
 
-/// `assert_always_greater_than_or_equal_to(x, y, ...)` is mostly equivalent to `assert_always!(x >= y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
+/// `assert_always_greater_than_or_equal_to(x, y, ...)` is mostly equivalent to
+/// `assert_always!(x >= y, ...)`, except Antithesis has more visibility to the
+/// value of `x` and `y`, and the assertion details would be merged with
+/// `{"left": x, "right": y}`.
 #[macro_export]
 macro_rules! assert_always_greater_than_or_equal_to {
     ($left:expr, $right:expr, $message:expr$(, $details:expr)?) => {
@@ -513,7 +518,10 @@ Example usage:
     };
 }
 
-/// `assert_always_less_than(x, y, ...)` is mostly equivalent to `assert_always!(x < y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
+/// `assert_always_less_than(x, y, ...)` is mostly equivalent to
+/// `assert_always!(x < y, ...)`, except Antithesis has more visibility to the
+/// value of `x` and `y`, and the assertion details would be merged with
+/// `{"left": x, "right": y}`.
 #[macro_export]
 macro_rules! assert_always_less_than {
     ($left:expr, $right:expr, $message:expr$(, $details:expr)?) => {
@@ -529,7 +537,10 @@ Example usage:
     };
 }
 
-/// `assert_always_less_than_or_equal_to(x, y, ...)` is mostly equivalent to `assert_always!(x <= y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
+/// `assert_always_less_than_or_equal_to(x, y, ...)` is mostly equivalent to
+/// `assert_always!(x <= y, ...)`, except Antithesis has more visibility to the
+/// value of `x` and `y`, and the assertion details would be merged with
+/// `{"left": x, "right": y}`.
 #[macro_export]
 macro_rules! assert_always_less_than_or_equal_to {
     ($left:expr, $right:expr, $message:expr$(, $details:expr)?) => {
@@ -545,7 +556,10 @@ Example usage:
     };
 }
 
-/// `assert_sometimes_greater_than(x, y, ...)` is mostly equivalent to `assert_sometimes!(x > y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
+/// `assert_sometimes_greater_than(x, y, ...)` is mostly equivalent to
+/// `assert_sometimes!(x > y, ...)`, except Antithesis has more visibility to
+/// the value of `x` and `y`, and the assertion details would be merged with
+/// `{"left": x, "right": y}`.
 #[macro_export]
 macro_rules! assert_sometimes_greater_than {
     ($left:expr, $right:expr, $message:expr$(, $details:expr)?) => {
@@ -561,7 +575,10 @@ Example usage:
     };
 }
 
-/// `assert_sometimes_greater_than_or_equal_to(x, y, ...)` is mostly equivalent to `assert_sometimes!(x >= y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
+/// `assert_sometimes_greater_than_or_equal_to(x, y, ...)` is mostly equivalent
+/// to `assert_sometimes!(x >= y, ...)`, except Antithesis has more visibility
+/// to the value of `x` and `y`, and the assertion details would be merged with
+/// `{"left": x, "right": y}`.
 #[macro_export]
 macro_rules! assert_sometimes_greater_than_or_equal_to {
     ($left:expr, $right:expr, $message:expr$(, $details:expr)?) => {
@@ -577,7 +594,10 @@ Example usage:
     };
 }
 
-/// `assert_sometimes_less_than(x, y, ...)` is mostly equivalent to `assert_sometimes!(x < y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
+/// `assert_sometimes_less_than(x, y, ...)` is mostly equivalent to
+/// `assert_sometimes!(x < y, ...)`, except Antithesis has more visibility to
+/// the value of `x` and `y`, and the assertion details would be merged with
+/// `{"left": x, "right": y}`.
 #[macro_export]
 macro_rules! assert_sometimes_less_than {
     ($left:expr, $right:expr, $message:expr$(, $details:expr)?) => {
@@ -593,7 +613,10 @@ Example usage:
     };
 }
 
-/// `assert_sometimes_less_than_or_equal_to(x, y, ...)` is mostly equivalent to `assert_sometimes!(x <= y, ...)`, except Antithesis has more visibility to the value of `x` and `y`, and the assertion details would be merged with `{"left": x, "right": y}`.
+/// `assert_sometimes_less_than_or_equal_to(x, y, ...)` is mostly equivalent to
+/// `assert_sometimes!(x <= y, ...)`, except Antithesis has more visibility to
+/// the value of `x` and `y`, and the assertion details would be merged with
+/// `{"left": x, "right": y}`.
 #[macro_export]
 macro_rules! assert_sometimes_less_than_or_equal_to {
     ($left:expr, $right:expr, $message:expr$(, $details:expr)?) => {
@@ -609,7 +632,8 @@ Example usage:
     };
 }
 
-/// `assert_always_some({a: x, b: y, ...})` is similar to `assert_always(x || y || ...)`, except:
+/// `assert_always_some({a: x, b: y, ...})` is similar to `assert_always(x || y
+/// || ...)`, except:
 /// - Antithesis has more visibility to the individual propositions.
 /// - There is no short-circuiting, so all of `x`, `y`, ... would be evaluated.
 /// - The assertion details would be merged with `{"a": x, "b": y, ...}`.
@@ -641,7 +665,8 @@ Example usage:
     };
 }
 
-/// `assert_sometimes_all({a: x, b: y, ...})` is similar to `assert_sometimes(x && y && ...)`, except:
+/// `assert_sometimes_all({a: x, b: y, ...})` is similar to
+/// `assert_sometimes(x && y && ...)`, except:
 /// - Antithesis has more visibility to the individual propositions.
 /// - There is no short-circuiting, so all of `x`, `y`, ... would be evaluated.
 /// - The assertion details would be merged with `{"a": x, "b": y, ...}`.

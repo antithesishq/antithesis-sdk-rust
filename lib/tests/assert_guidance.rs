@@ -1,5 +1,7 @@
+#![cfg(feature = "full")]
+
 use antithesis_sdk::{antithesis_init, assert_always_greater_than, LOCAL_OUTPUT};
-use serde_json::json;
+use serde_json::{json, Value};
 
 mod common;
 use common::SDKInput;
@@ -8,7 +10,11 @@ use crate::common::{AntithesisGuidance, GuidanceType};
 
 #[test]
 fn assert_guidance() {
-    let output_file = "/tmp/antithesis-assert-guidance.json";
+    let output_path = std::env::temp_dir().join(format!(
+        "antithesis-assert-guidance-{}.jsonl", std::process::id()
+    ));
+    let _ = std::fs::remove_file(&output_path);
+    let output_file = output_path.to_str().unwrap();
     let prev_v = common::env::set_var(LOCAL_OUTPUT, output_file);
     antithesis_init();
 
@@ -20,7 +26,10 @@ fn assert_guidance() {
     match common::read_jsonl_tags(output_file) {
         Ok(x) => {
             let mut did_register = false;
-            let mut did_hit = false;
+            // The `left` of every hit, in order: greater_than minimizes the
+            // gap, so a hit is emitted only when x - 0 falls below the
+            // watermark so far.
+            let mut hits = Vec::new();
             for obj in x.iter() {
                 if let SDKInput::AntithesisGuidance(AntithesisGuidance {
                     guidance_type,
@@ -28,12 +37,15 @@ fn assert_guidance() {
                     id,
                     message,
                     location,
+                    guidance_data,
                     ..
                 }) = obj
                 {
                     if *hit {
-                        did_hit = true;
+                        assert_eq!(guidance_data["right"], json!(0));
+                        hits.push(guidance_data["left"].clone());
                     } else {
+                        assert!(guidance_data.is_null(), "a declaration carries no data");
                         did_register = true;
                     };
                     assert_eq!(*guidance_type, GuidanceType::Numeric);
@@ -50,9 +62,11 @@ fn assert_guidance() {
                 println!("{:?}", obj);
             }
             assert!(did_register);
-            assert!(did_hit);
+            let expected: Vec<Value> = [0, -1, -3, -5, -7, -9].iter().map(|x| json!(x)).collect();
+            assert_eq!(hits, expected);
         }
-        Err(e) => println!("{}", e),
+        Err(e) => panic!("{}", e),
     }
     common::env::restore_var(LOCAL_OUTPUT, prev_v);
+    std::fs::remove_file(output_path).unwrap();
 }

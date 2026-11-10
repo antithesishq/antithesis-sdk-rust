@@ -47,6 +47,8 @@ pub fn get_random() -> u64 {
 /// in a structured way enables it to provide more interesting
 /// choices over time.
 ///
+/// Returns `None` for an empty slice.
+///
 /// # Example
 ///
 /// ```
